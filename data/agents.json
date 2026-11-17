@@ -1,0 +1,32 @@
+{
+  "agents": [
+    {
+      "id": 1,
+      "name": "Documentation Specialist API",
+      "role": "documentation",
+      "status": "working",
+      "currentTask": 3
+    },
+    {
+      "id": 2,
+      "name": "Code Analyst",
+      "role": "analysis",
+      "status": "idle",
+      "currentTask": null
+    },
+    {
+      "id": 3,
+      "name": "Developer Agent",
+      "role": "development",
+      "status": "idle",
+      "currentTask": null
+    },
+    {
+      "id": 4,
+      "name": "Test Agent",
+      "role": "testing",
+      "status": "idle",
+      "currentTask": null
+    }
+  ]
+}

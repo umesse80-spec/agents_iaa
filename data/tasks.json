@@ -1,0 +1,93 @@
+{
+  "tasks": [
+    {
+      "id": 1,
+      "agentId": 1,
+      "description": "Test de sauvegarde permanente",
+      "status": "failed",
+      "result": null,
+      "error": "Erreur manuelle",
+      "createdAt": "2026-11-17T17:04:41.740Z",
+      "startedAt": "2026-11-17T18:00:08.779Z",
+      "completedAt": "2026-11-17T18:00:15.688Z"
+    },
+    {
+      "id": 2,
+      "agentId": 1,
+      "description": "tu dois regarder les nouvelles tâches et les répartir aux bons agents",
+      "status": "completed",
+      "result": "je ne sais pas",
+      "error": null,
+      "createdAt": "2026-11-17T18:00:01.262Z",
+      "startedAt": "2026-11-17T18:00:19.171Z",
+      "completedAt": "2026-11-17T18:03:14.195Z"
+    },
+    {
+      "id": 3,
+      "agentId": 1,
+      "description": "Test de communication entre l'interface et le backend",
+      "status": "running",
+      "result": null,
+      "error": null,
+      "createdAt": "2026-11-17T18:08:14.782Z",
+      "startedAt": "2026-11-17T19:06:34.135Z",
+      "completedAt": null
+    },
+    {
+      "id": 4,
+      "agentId": 2,
+      "description": "Explique simplement le fonctionnement de notre système AGENTS_IA et identifie les améliorations possibles.",
+      "status": "failed",
+      "result": null,
+      "error": "Test interrompu pour lib�rer l agent",
+      "createdAt": "2026-11-17T18:14:16.645Z",
+      "startedAt": "2026-11-17T18:14:19.684Z",
+      "completedAt": "2026-11-17T18:16:07.631Z"
+    },
+    {
+      "id": 5,
+      "agentId": 2,
+      "description": "Dis bonjour et explique en une phrase ce que tu sais faire.",
+      "status": "failed",
+      "result": null,
+      "error": "{\"error\":{\"code\":404,\"message\":\"models/gemini-flash-latest is not found for API version v1, or is not supported for generateContent. Call ModelService.ListModels to see the list of available models and their supported methods.\",\"status\":\"NOT_FOUND\"}}",
+      "createdAt": "2026-11-17T18:15:43.553Z",
+      "startedAt": "2026-11-17T18:19:28.447Z",
+      "completedAt": "2026-11-17T18:19:28.727Z"
+    },
+    {
+      "id": 6,
+      "agentId": 2,
+      "description": "Dis bonjour et explique en une phrase ce que tu sais faire.",
+      "status": "failed",
+      "result": null,
+      "error": "{\"error\":{\"code\":503,\"message\":\"This model is currently experiencing high demand. Spikes in demand are usually temporary. Please try again later.\",\"status\":\"UNAVAILABLE\"}}",
+      "createdAt": "2026-11-17T18:24:35.197Z",
+      "startedAt": "2026-11-17T18:24:47.819Z",
+      "completedAt": "2026-11-17T18:31:29.060Z"
+    },
+    {
+      "id": 7,
+      "agentId": 1,
+      "description": "Dis bonjour et explique en une phrase ce que tu sais faire.",
+      "status": "failed",
+      "result": null,
+      "error": "{\"error\":{\"code\":503,\"message\":\"This model is currently experiencing high demand. Spikes in demand are usually temporary. Please try again later.\",\"status\":\"UNAVAILABLE\"}}",
+      "createdAt": "2026-11-17T19:06:23.049Z",
+      "startedAt": "2026-11-17T19:06:24.408Z",
+      "completedAt": "2026-11-17T19:06:27.491Z"
+    },
+    {
+      "id": 8,
+      "agentId": 1,
+      "description": "documente la liste reçu",
+      "status": "pending",
+      "result": null,
+      "error": null,
+      "createdAt": "2026-11-17T20:41:55.874Z",
+      "startedAt": null,
+      "completedAt": null
+    }
+  ],
+  "nextTaskId": 9
+}
