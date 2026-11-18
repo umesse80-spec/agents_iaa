@@ -1,40 +1,71 @@
+
 <!DOCTYPE html>
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>AGENTS_IA — Dashboard</title>
+
+<script>
+(function () {
+  var t = localStorage.getItem("theme") ||
+    (matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark");
+  document.documentElement.dataset.theme = t;
+})();
+</script>
+
 <link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@11.11.1/styles/github-dark.min.css">
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/dompurify@3.2.6/dist/purify.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/highlight.js@11.11.1/highlight.min.js"></script>
 </head>
+
 <body>
 
-  <div class="topbar">
-    <div class="brand">
-      <div class="brand-mark">🤖</div>
-      <div>
-        <h1>AGENTS_IA</h1>
-        <div class="subtitle">Pilotage des agents &amp; des missions</div>
-      </div>
+<div class="topbar">
+  <div class="brand">
+    <div class="brand-mark">
+      <img id="brand-logo" src="logo-ai.png" alt="Logo AGENTS_IA">
     </div>
-    <div class="status-pill">
-      <span class="dot" id="status-dot"></span>
-      <span id="status-text">Connexion au backend…</span>
+    <div>
+      <h1>AGENTS_IA</h1>
+      <div class="subtitle">Pilotage des agents &amp; des missions</div>
     </div>
   </div>
+
+  <nav class="view-nav">
+    <button type="button" id="show-agents" class="view-button active">AGENTS</button>
+    <button type="button" id="show-assistant" class="view-button">ASSISTANT</button>
+  </nav>
+
+  <div class="status-pill">
+    <span class="dot" id="status-dot"></span>
+    <span id="status-text">Connexion au backend…</span>
+  </div>
+
+  <button type="button" class="ghost" id="theme-toggle" aria-label="Changer de thème"></button>
+</div>
+
+<!-- ESPACE AGENTS -->
+<div id="agents-view">
 
   <div class="stats">
     <div class="stat-card" style="--accent-color:#8b5cf6">
       <div class="stat-label">Agents</div>
       <div class="stat-value" id="stat-agents">–</div>
     </div>
+
     <div class="stat-card" style="--accent-color:#f5a524">
       <div class="stat-label">En attente</div>
       <div class="stat-value" id="stat-pending">–</div>
     </div>
+
     <div class="stat-card" style="--accent-color:#4f8cff">
       <div class="stat-label">En cours</div>
       <div class="stat-value" id="stat-running">–</div>
     </div>
+
     <div class="stat-card" style="--accent-color:#22c55e">
       <div class="stat-label">Terminées</div>
       <div class="stat-value" id="stat-completed">–</div>
@@ -45,10 +76,7 @@
 
     <section class="panel">
       <div class="panel-head">
-        <h2>
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-          Agents
-        </h2>
+        <h2>Agents</h2>
         <span class="count-chip" id="agent-count">0</span>
       </div>
       <div class="agent-list" id="agent-list">
@@ -58,22 +86,41 @@
 
     <section class="panel">
       <div class="panel-head">
-        <h2>
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
-          Missions
-        </h2>
+        <h2>Missions</h2>
         <span class="count-chip" id="task-count">0</span>
+      </div>
+
+      <div class="new-task" id="orchestrator-form">
+        <div class="field-label">Mission automatique avec l'IA</div>
+
+        <textarea id="orchestrator-request"
+          placeholder="Ex. : calculatrice, JavaScript, interface moderne, tests..."
+          required></textarea>
+
+        <div id="orchestrator-chat" class="orchestrator-chat"></div>
+
+        <div class="field-label">Choisir les agents participants</div>
+
+        <div style="display:flex;flex-direction:column;gap:10px;margin:12px 0;">
+          <label><input type="checkbox" class="orchestrator-agent" value="1"> Documentation Specialist API</label>
+          <label><input type="checkbox" class="orchestrator-agent" value="2"> Code Analyst</label>
+          <label><input type="checkbox" class="orchestrator-agent" value="3"> Developer Agent</label>
+          <label><input type="checkbox" class="orchestrator-agent" value="4"> Test Agent</label>
+        </div>
+
+        <button type="button" class="primary" id="orchestrator-button">
+          ⚡ Lancer le workflow automatique
+        </button>
       </div>
 
       <form class="new-task" id="new-task-form">
         <div class="field-label">Agent assigné</div>
         <select id="task-agent" required></select>
+
         <div class="field-label">Description de la mission</div>
         <textarea id="task-desc" placeholder="Ex. : Documenter la route /api/v1/products…" required></textarea>
-        <button type="submit" class="primary">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
-          Créer la mission
-        </button>
+
+        <button type="submit" class="primary">＋ Créer la mission</button>
       </form>
 
       <div class="task-list" id="task-list">
@@ -82,20 +129,97 @@
     </section>
 
   </div>
+</div>
 
-  <div id="toasts"></div>
+<!-- ESPACE ASSISTANT -->
+<div id="assistant-view" class="hidden">
+  <div class="assistant-layout">
 
-  <div class="modal-overlay hidden" id="modal-overlay">
-    <div class="modal">
-      <h3 id="modal-title">Terminer la mission</h3>
-      <textarea id="modal-input" placeholder="Décris le résultat…"></textarea>
-      <div class="modal-actions">
-        <button class="ghost" id="modal-cancel">Annuler</button>
-        <button class="primary" id="modal-confirm">Valider</button>
+    <aside class="assistant-sidebar">
+      <button type="button" id="new-chat-button" class="new-chat-button">
+        <span>＋</span> Nouveau chat
+      </button>
+
+      <div class="history-title">Historique</div>
+
+      <div id="chat-history" class="chat-history">
+        <p class="history-empty">Tes conversations apparaîtront ici.</p>
       </div>
+    </aside>
+
+    <main class="assistant-panel">
+
+      <div class="assistant-header">
+        <button type="button" id="toggle-history" class="ghost"
+                title="Afficher ou masquer l'historique"
+                aria-label="Masquer l'historique">
+          ☰
+        </button>
+
+        <div>
+          <h2>Assistant IA</h2>
+          <p>Ton assistant personnel connecté à AGENTS_IA</p>
+        </div>
+
+        <span class="count-chip">En ligne</span>
+      </div>
+
+      <div class="assistant-messages" id="assistant-messages">
+        <div class="assistant-welcome">
+          <div class="thinking-logo"></div>
+          <h3>Comment puis-je t'aider ?</h3>
+          <p>Pose-moi une question, envoie des images ou demande-moi de travailler sur un projet.</p>
+        </div>
+      </div>
+
+      <div class="assistant-composer">
+
+        <textarea id="assistant-input"
+          placeholder="Écris ton message..."
+          rows="2"></textarea>
+
+        <div class="assistant-tools">
+
+          <label for="assistant-image" class="ghost assistant-upload" title="Ajouter des images">
+            ＋
+          </label>
+
+          <input
+            type="file"
+            id="assistant-image"
+            accept="image/jpeg,image/png,image/webp"
+            multiple
+            hidden
+          >
+
+          <button type="button" class="primary" id="assistant-send">
+            Envoyer
+          </button>
+
+        </div>
+
+        <div id="assistant-preview"></div>
+
+      </div>
+    </main>
+  </div>
+</div>
+
+<div id="toasts"></div>
+
+<!-- MODALE -->
+<div class="modal-overlay hidden" id="modal-overlay">
+  <div class="modal">
+    <h3 id="modal-title">Terminer la mission</h3>
+    <textarea id="modal-input" placeholder="Décris le résultat…"></textarea>
+    <div class="modal-actions">
+      <button class="ghost" id="modal-cancel">Annuler</button>
+      <button class="primary" id="modal-confirm">Valider</button>
     </div>
   </div>
+</div>
 
+<!-- SCRIPT PRINCIPAL -->
 <script>
 const API = "http://localhost:3000";
 
@@ -108,26 +232,128 @@ const icons = {
 };
 
 const statusLabel = {
-  idle: "idle", working: "working",
-  pending: "attente", running: "en cours",
-  completed: "terminé", failed: "échoué"
+  idle: "Disponible",
+  working: "Travaille",
+  pending: "En attente",
+  running: "En cours",
+  completed: "Terminée",
+  failed: "Échouée"
 };
 
-const badge = (status) =>
-  `<span class="badge badge-${status}">${statusLabel[status] || status}</span>`;
+function escapeHTML(value) {
+  return String(value ?? "").replace(/[&<>"']/g, char => ({
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    '"': "&quot;",
+    "'": "&#39;"
+  })[char]);
+}
 
-const initials = (name) =>
-  name.split(" ").map(w => w[0]).slice(0, 2).join("").toUpperCase();
+const badge = status =>
+  `<span class="badge badge-${escapeHTML(status)}">${escapeHTML(statusLabel[status] || status)}</span>`;
+
+const initials = name =>
+  String(name || "?").split(" ").map(w => w[0]).slice(0, 2).join("").toUpperCase();
 
 function toast(message, kind = "") {
+  const container = document.getElementById("toasts");
   const el = document.createElement("div");
   el.className = `toast ${kind}`;
   el.textContent = message;
-  document.getElementById("toasts").appendChild(el);
+  container.appendChild(el);
   setTimeout(() => el.remove(), 3500);
 }
 
-// ---------- Modal (remplace prompt()/alert()) ----------
+// NAVIGATION
+const agentsView = document.getElementById("agents-view");
+const assistantView = document.getElementById("assistant-view");
+const showAgentsButton = document.getElementById("show-agents");
+const showAssistantButton = document.getElementById("show-assistant");
+
+function showView(view) {
+  const showAgents = view === "agents";
+  agentsView.classList.toggle("hidden", !showAgents);
+  assistantView.classList.toggle("hidden", showAgents);
+  showAgentsButton.classList.toggle("active", showAgents);
+  showAssistantButton.classList.toggle("active", !showAgents);
+}
+
+showAgentsButton.addEventListener("click", () => showView("agents"));
+showAssistantButton.addEventListener("click", () => showView("assistant"));
+
+// MARKDOWN
+marked.setOptions({ gfm: true, breaks: true });
+
+function normalizeMarkdown(text) {
+  const lines = String(text ?? "").replace(/\r\n/g, "\n").split("\n");
+  let insideFence = false;
+
+  return lines.map(line => {
+    if (/^\s*(```|~~~)/.test(line)) {
+      insideFence = !insideFence;
+      return line;
+    }
+    if (insideFence) return line;
+
+    return line.split(/(`+[^`]*`+)/g).map(part => {
+      if (part.startsWith("`")) return part;
+      return part.replace(/\\([\\`*_{}\[\]()#+.!>|~-])/g, "$1");
+    }).join("");
+  }).join("\n");
+}
+
+function renderMarkdown(text) {
+  return DOMPurify.sanitize(marked.parse(normalizeMarkdown(text)));
+}
+
+function enhanceCodeBlocks(container) {
+  container.querySelectorAll("pre").forEach(pre => {
+    const code = pre.querySelector("code");
+    if (!code) return;
+
+    if (window.hljs) {
+      try { hljs.highlightElement(code); }
+      catch (error) { console.warn(error); }
+    }
+
+    if (pre.querySelector(".copy-code")) return;
+
+    const button = document.createElement("button");
+    button.className = "copy-code";
+    button.type = "button";
+    button.textContent = "Copier";
+
+    button.addEventListener("click", async () => {
+      try {
+        await navigator.clipboard.writeText(code.textContent);
+        button.textContent = "Copié !";
+        toast("Code copié dans le presse-papiers", "success");
+      } catch (error) {
+        const area = document.createElement("textarea");
+        area.value = code.textContent;
+        document.body.appendChild(area);
+        area.select();
+        const copied = document.execCommand("copy");
+        area.remove();
+        button.textContent = copied ? "Copié !" : "Copie impossible";
+      }
+      setTimeout(() => button.textContent = "Copier", 2000);
+    });
+
+    pre.appendChild(button);
+  });
+}
+
+function createMarkdownElement(text) {
+  const container = document.createElement("div");
+  container.className = "markdown-body";
+  container.innerHTML = renderMarkdown(text);
+  enhanceCodeBlocks(container);
+  return container;
+}
+
+// MODALE
 let modalResolve = null;
 const overlay = document.getElementById("modal-overlay");
 const modalInput = document.getElementById("modal-input");
@@ -138,22 +364,31 @@ function askModal(title, placeholder) {
   modalInput.value = "";
   overlay.classList.remove("hidden");
   modalInput.focus();
+
   return new Promise(resolve => { modalResolve = resolve; });
 }
 
 document.getElementById("modal-cancel").onclick = () => {
   overlay.classList.add("hidden");
-  if (modalResolve) modalResolve(null);
+  if (modalResolve) {
+    modalResolve(null);
+    modalResolve = null;
+  }
 };
+
 document.getElementById("modal-confirm").onclick = () => {
   overlay.classList.add("hidden");
-  if (modalResolve) modalResolve(modalInput.value.trim());
+  if (modalResolve) {
+    modalResolve(modalInput.value.trim());
+    modalResolve = null;
+  }
 };
 
-// ---------- Data loading ----------
-
+// AGENTS
 async function loadAgents() {
   const res = await fetch(`${API}/api/agents`);
+  if (!res.ok) throw new Error("Impossible de charger les agents");
+
   const agents = await res.json();
 
   document.getElementById("agent-count").textContent = agents.length;
@@ -163,10 +398,10 @@ async function loadAgents() {
   list.innerHTML = agents.length
     ? agents.map(a => `
         <div class="agent-card">
-          <div class="avatar">${initials(a.name)}</div>
+          <div class="avatar">${escapeHTML(initials(a.name))}</div>
           <div class="agent-info">
-            <div class="agent-name">${a.name}</div>
-            <div class="agent-role">${a.role}</div>
+            <div class="agent-name">${escapeHTML(a.name)}</div>
+            <div class="agent-role">${escapeHTML(a.role)}</div>
           </div>
           ${badge(a.status)}
         </div>
@@ -174,118 +409,747 @@ async function loadAgents() {
     : `<p class="empty">${icons.empty}<br>Aucun agent.</p>`;
 
   const select = document.getElementById("task-agent");
-  const prev = select.value;
-  select.innerHTML = agents.map(a => `<option value="${a.id}">${a.name}</option>`).join("");
-  if (prev) select.value = prev;
+  const previous = select.value;
+  select.innerHTML = agents.map(a =>
+    `<option value="${escapeHTML(a.id)}">${escapeHTML(a.name)}</option>`
+  ).join("");
+  if (previous) select.value = previous;
 }
+
+// MISSIONS
+let firstTasksLoad = true;
+let lastTaskCount = 0;
 
 async function loadTasks() {
   const res = await fetch(`${API}/api/tasks`);
+  if (!res.ok) throw new Error("Impossible de charger les missions");
+
   const tasks = await res.json();
 
   document.getElementById("task-count").textContent = tasks.length;
-  document.getElementById("stat-pending").textContent = tasks.filter(t => t.status === "pending").length;
-  document.getElementById("stat-running").textContent = tasks.filter(t => t.status === "running").length;
-  document.getElementById("stat-completed").textContent = tasks.filter(t => t.status === "completed").length;
+  document.getElementById("stat-pending").textContent =
+    tasks.filter(t => t.status === "pending").length;
+  document.getElementById("stat-running").textContent =
+    tasks.filter(t => t.status === "running").length;
+  document.getElementById("stat-completed").textContent =
+    tasks.filter(t => t.status === "completed").length;
 
   const list = document.getElementById("task-list");
-  list.innerHTML = tasks.length
-    ? tasks.slice().reverse().map(t => `
-        <div class="task-card border-${t.status}">
-          <div class="task-top">
-            <span class="task-id">#${t.id}</span>
-            ${badge(t.status)}
-          </div>
-          <div class="task-desc">${t.description}</div>
-          <div class="task-meta">Agent #${t.agentId}</div>
-          ${t.result ? `<div class="task-result">${t.result}</div>` : ""}
-          ${t.error ? `<div class="task-error">${t.error}</div>` : ""}
-          <div class="task-actions">
-            ${t.status === "pending" ? `<button class="ghost" onclick="startTask(${t.id})">${icons.play} Démarrer</button>` : ""}
-            ${t.status === "pending" || t.status === "running" ? `<button class="success" onclick="executeTask(${t.id})">${icons.bolt} Exécuter</button>` : ""}
-            ${t.status === "running" ? `<button class="ghost" onclick="completeTask(${t.id})">${icons.check} Terminer</button>` : ""}
-            ${t.status === "running" ? `<button class="danger" onclick="failTask(${t.id})">${icons.x} Échec</button>` : ""}
-          </div>
-        </div>
-      `).join("")
-    : `<p class="empty">${icons.empty}<br>Aucune mission pour l'instant.</p>`;
+  const scrollPosition = window.scrollY;
+  const nearBottom =
+    window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 160;
+
+  list.innerHTML = "";
+
+  if (!tasks.length) {
+    list.innerHTML = `<p class="empty">${icons.empty}<br>Aucune mission pour l'instant.</p>`;
+    window.scrollTo(0, scrollPosition);
+    return;
+  }
+
+  tasks.slice().sort((a, b) => Number(a.id) - Number(b.id)).forEach(t => {
+    const card = document.createElement("div");
+    card.className = `task-card border-${escapeHTML(t.status)}`;
+
+    const top = document.createElement("div");
+    top.className = "task-top";
+    top.innerHTML = `
+      <span class="task-id">#${escapeHTML(t.id)}</span>
+      ${badge(t.status)}
+    `;
+
+    const description = document.createElement("div");
+    description.className = "task-desc";
+    description.textContent = t.description || "";
+
+    const meta = document.createElement("div");
+    meta.className = "task-meta";
+    meta.textContent = `Agent #${t.agentId}`;
+
+    card.append(top, description, meta);
+
+    if (t.result) {
+      const result = document.createElement("div");
+      result.className = "task-result";
+      result.appendChild(createMarkdownElement(t.result));
+      card.appendChild(result);
+    }
+
+    if (t.error) {
+      const error = document.createElement("div");
+      error.className = "task-error";
+      error.textContent = t.error;
+      card.appendChild(error);
+    }
+
+    const actions = document.createElement("div");
+    actions.className = "task-actions";
+
+    if (t.status === "pending") {
+      actions.innerHTML += `<button class="ghost" onclick="startTask(${Number(t.id)})">${icons.play} Démarrer</button>`;
+    }
+    if (t.status === "pending" || t.status === "running") {
+      actions.innerHTML += `<button class="success" onclick="executeTask(${Number(t.id)})">${icons.bolt} Exécuter</button>`;
+    }
+    if (t.status === "running") {
+      actions.innerHTML += `<button class="ghost" onclick="completeTask(${Number(t.id)})">${icons.check} Terminer</button>`;
+      actions.innerHTML += `<button class="danger" onclick="failTask(${Number(t.id)})">${icons.x} Échec</button>`;
+    }
+
+    card.appendChild(actions);
+    list.appendChild(card);
+  });
+
+  const shouldStick = firstTasksLoad || tasks.length > lastTaskCount || nearBottom;
+  firstTasksLoad = false;
+  lastTaskCount = tasks.length;
+
+  window.scrollTo(0, shouldStick ? document.documentElement.scrollHeight : scrollPosition);
 }
 
+// ACTUALISATION
 async function refresh() {
   try {
     await Promise.all([loadAgents(), loadTasks()]);
     document.getElementById("status-dot").className = "dot online";
     document.getElementById("status-text").textContent = "Backend connecté";
-  } catch (e) {
+  } catch (error) {
     document.getElementById("status-dot").className = "dot offline";
     document.getElementById("status-text").textContent = "Backend injoignable";
+    console.error(error);
   }
 }
 
-// ---------- Actions ----------
+// ORCHESTRATEUR
+document.getElementById("orchestrator-button").addEventListener("click", async () => {
+  const input = document.getElementById("orchestrator-request");
+  const button = document.getElementById("orchestrator-button");
+  const request = input.value.trim();
 
-document.getElementById("new-task-form").addEventListener("submit", async (e) => {
+  const selectedAgents = Array.from(
+    document.querySelectorAll(".orchestrator-agent:checked")
+  ).map(checkbox => Number(checkbox.value));
+
+  if (!request) return toast("Entre quelques mots-clés pour ta mission", "error");
+  if (!selectedAgents.length) return toast("Sélectionne au moins un agent", "error");
+
+  button.disabled = true;
+  button.textContent = "⏳ Préparation du workflow...";
+
+  try {
+    const res = await fetch(`${API}/api/orchestrate`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ request, selectedAgents })
+    });
+
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || data.message || "Erreur de l'orchestrateur");
+
+    toast("Workflow automatique terminé !", "success");
+    input.value = "";
+    document.querySelectorAll(".orchestrator-agent").forEach(c => c.checked = false);
+    await refresh();
+  } catch (error) {
+    toast(error.message, "error");
+    console.error("Erreur orchestrateur :", error);
+  } finally {
+    button.disabled = false;
+    button.textContent = "⚡ Lancer le workflow automatique";
+  }
+});
+
+// CRÉATION DE MISSION
+document.getElementById("new-task-form").addEventListener("submit", async e => {
   e.preventDefault();
+
   const agentId = document.getElementById("task-agent").value;
   const task = document.getElementById("task-desc").value;
 
-  const res = await fetch(`${API}/api/tasks`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ agentId, task })
-  });
+  try {
+    const res = await fetch(`${API}/api/tasks`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ agentId, task })
+    });
 
-  if (res.ok) {
+    if (!res.ok) throw new Error("Erreur lors de la création");
+
     toast("Mission créée", "success");
     document.getElementById("task-desc").value = "";
-  } else {
-    toast("Erreur lors de la création", "error");
+    await refresh();
+  } catch (error) {
+    toast(error.message, "error");
   }
-  await refresh();
 });
 
+// ACTIONS SUR LES MISSIONS
 async function startTask(taskId) {
-  await fetch(`${API}/api/tasks/start`, {
-    method: "POST", headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ taskId })
-  });
-  toast(`Mission #${taskId} démarrée`);
-  await refresh();
+  try {
+    const res = await fetch(`${API}/api/tasks/start`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ taskId })
+    });
+    if (!res.ok) throw new Error("Impossible de démarrer la mission");
+    toast(`Mission #${taskId} démarrée`);
+    await refresh();
+  } catch (error) {
+    toast(error.message, "error");
+  }
 }
 
 async function executeTask(taskId) {
-  await fetch(`${API}/api/tasks/execute`, {
-    method: "POST", headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ taskId })
-  });
-  toast(`Mission #${taskId} exécutée`, "success");
-  await refresh();
+  try {
+    const res = await fetch(`${API}/api/tasks/execute`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ taskId })
+    });
+    if (!res.ok) throw new Error("Erreur pendant l'exécution");
+    toast(`Mission #${taskId} exécutée`, "success");
+    await refresh();
+  } catch (error) {
+    toast(error.message, "error");
+    await refresh();
+  }
 }
 
 async function completeTask(taskId) {
   const result = await askModal("Terminer la mission", "Décris le résultat obtenu…");
   if (!result) return;
-  await fetch(`${API}/api/tasks/complete`, {
-    method: "POST", headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ taskId, result })
-  });
-  toast(`Mission #${taskId} terminée`, "success");
-  await refresh();
+
+  try {
+    const res = await fetch(`${API}/api/tasks/complete`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ taskId, result })
+    });
+    if (!res.ok) throw new Error("Impossible de terminer la mission");
+    toast(`Mission #${taskId} terminée`, "success");
+    await refresh();
+  } catch (error) {
+    toast(error.message, "error");
+  }
 }
 
 async function failTask(taskId) {
-  const error = await askModal("Marquer en échec", "Décris la raison de l'échec…");
-  if (!error) return;
-  await fetch(`${API}/api/tasks/fail`, {
-    method: "POST", headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ taskId, error })
-  });
-  toast(`Mission #${taskId} échouée`, "error");
-  await refresh();
+  const errorText = await askModal("Marquer en échec", "Décris la raison de l'échec…");
+  if (!errorText) return;
+
+  try {
+    const res = await fetch(`${API}/api/tasks/fail`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ taskId, error: errorText })
+    });
+    if (!res.ok) throw new Error("Impossible de modifier la mission");
+    toast(`Mission #${taskId} échouée`, "error");
+    await refresh();
+  } catch (error) {
+    toast(error.message, "error");
+  }
 }
 
+// THÈME
+const themeBtn = document.getElementById("theme-toggle");
+
+function applyTheme(t) {
+  document.documentElement.dataset.theme = t;
+  localStorage.setItem("theme", t);
+  themeBtn.textContent = t === "light" ? "🌙" : "☀️";
+  themeBtn.setAttribute("aria-label",
+    t === "light" ? "Passer en thème sombre" : "Passer en thème clair");
+}
+
+themeBtn.addEventListener("click", () =>
+  applyTheme(document.documentElement.dataset.theme === "light" ? "dark" : "light"));
+
+applyTheme(document.documentElement.dataset.theme || "dark");
+
+// DÉMARRAGE
 refresh();
-setInterval(refresh, 4000);
+setInterval(refresh, 40000);
+</script>
+
+<!-- SCRIPT ASSISTANT -->
+<script>
+const assistantInput = document.getElementById("assistant-input");
+const assistantSend = document.getElementById("assistant-send");
+const assistantMessages = document.getElementById("assistant-messages");
+const chatHistory = document.getElementById("chat-history");
+const newChatButton = document.getElementById("new-chat-button");
+const assistantImageInput = document.getElementById("assistant-image");
+const assistantPreview = document.getElementById("assistant-preview");
+
+// OUVRIR / FERMER L'HISTORIQUE
+const toggleHistoryButton = document.getElementById("toggle-history");
+const assistantLayout = document.querySelector(".assistant-layout");
+
+toggleHistoryButton.addEventListener("click", () => {
+  const collapsed = assistantLayout.classList.toggle("history-collapsed");
+
+  toggleHistoryButton.setAttribute(
+    "aria-label",
+    collapsed ? "Afficher l'historique" : "Masquer l'historique"
+  );
+});
+
+const MAX_IMAGE_SIZE = 1024 * 1024;
+const MAX_IMAGES = 5;
+const ALLOWED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp"];
+
+let selectedImages = [];
+
+let conversations = [];
+
+try {
+  conversations = JSON.parse(localStorage.getItem("agents_ia_conversations") || "[]");
+  if (!Array.isArray(conversations)) conversations = [];
+} catch (error) {
+  conversations = [];
+}
+
+let activeConversationId = null;
+let assistantBusy = false;
+
+function saveConversations() {
+  try {
+    localStorage.setItem("agents_ia_conversations", JSON.stringify(conversations));
+  } catch (error) {
+    console.warn("Historique trop volumineux pour le stockage local :", error);
+    toast("Conversation conservée, mais sauvegarde locale impossible.", "error");
+  }
+}
+
+function createConversation() {
+  const conversation = {
+    id: Date.now().toString(),
+    title: "Nouvelle conversation",
+    messages: [],
+    createdAt: new Date().toISOString()
+  };
+
+  conversations.unshift(conversation);
+  activeConversationId = conversation.id;
+
+  saveConversations();
+  renderHistory();
+  renderConversation();
+  assistantInput.focus();
+}
+
+function getActiveConversation() {
+  return conversations.find(c => c.id === activeConversationId);
+}
+
+// HISTORIQUE
+function renderHistory() {
+  chatHistory.innerHTML = "";
+
+  if (!conversations.length) {
+    const empty = document.createElement("p");
+    empty.className = "history-empty";
+    empty.textContent = "Tes conversations apparaîtront ici.";
+    chatHistory.appendChild(empty);
+    return;
+  }
+
+  conversations.forEach(conversation => {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "chat-history-item";
+
+    if (conversation.id === activeConversationId) {
+      button.classList.add("active");
+    }
+
+    const title = document.createElement("span");
+    title.textContent = conversation.title;
+    button.appendChild(title);
+
+    button.addEventListener("click", () => {
+      if (assistantBusy) return;
+      activeConversationId = conversation.id;
+      renderHistory();
+      renderConversation();
+    });
+
+    chatHistory.appendChild(button);
+  });
+}
+
+// AFFICHAGE DES IMAGES
+function appendConversationImages(element, images, altText) {
+  if (!Array.isArray(images)) return;
+
+  images.forEach(imageData => {
+    if (typeof imageData !== "string") return;
+
+    const image = document.createElement("img");
+    image.src = imageData;
+    image.alt = altText;
+    image.style.maxWidth = "100%";
+    image.style.maxHeight = "650px";
+    image.style.objectFit = "contain";
+    image.style.display = "block";
+    image.style.marginTop = "12px";
+    image.style.borderRadius = "12px";
+
+    element.appendChild(image);
+  });
+}
+
+// AFFICHAGE DES MESSAGES
+function renderConversation() {
+  assistantMessages.innerHTML = "";
+
+  const conversation = getActiveConversation();
+
+  if (!conversation || !conversation.messages.length) {
+    const welcome = document.createElement("div");
+    welcome.className = "assistant-welcome";
+
+    const logo = document.createElement("div");
+    logo.className = "thinking-logo";
+
+    const heading = document.createElement("h3");
+    heading.textContent = "Comment puis-je t'aider ?";
+
+    const description = document.createElement("p");
+    description.textContent =
+      "Pose-moi une question ou demande-moi de travailler sur un projet.";
+
+    welcome.append(logo, heading, description);
+    assistantMessages.appendChild(welcome);
+    return;
+  }
+
+  conversation.messages.forEach(message => {
+    const element = document.createElement("div");
+
+    if (message.role === "user") {
+      element.className = "assistant-user-message";
+
+      if (message.content) {
+        const text = document.createElement("p");
+        text.textContent = message.content;
+        element.appendChild(text);
+      }
+
+      const images = Array.isArray(message.images)
+        ? message.images
+        : (message.imageData ? [message.imageData] : []);
+
+      images.forEach(imageData => {
+        const image = document.createElement("img");
+        image.src = imageData;
+        image.alt = "Image envoyée";
+        image.style.maxWidth = "240px";
+        image.style.maxHeight = "240px";
+        image.style.objectFit = "contain";
+        image.style.display = "inline-block";
+        image.style.marginTop = "8px";
+        image.style.marginRight = "8px";
+        image.style.borderRadius = "12px";
+        element.appendChild(image);
+      });
+
+    } else {
+      element.className = "assistant-ai-message";
+
+      element.appendChild(createMarkdownElement(message.content || ""));
+
+      // Afficher les images générées par l'IA
+      const generatedImages = Array.isArray(message.images)
+        ? message.images
+        : [];
+
+      appendConversationImages(
+        element,
+        generatedImages,
+        "Image générée par l'Assistant IA"
+      );
+    }
+
+    assistantMessages.appendChild(element);
+  });
+
+  assistantMessages.scrollTop = assistantMessages.scrollHeight;
+}
+
+// LECTURE DES IMAGES
+function readImageAsDataURL(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = () => reject(new Error("Impossible de lire cette image."));
+
+    reader.readAsDataURL(file);
+  });
+}
+
+// APERÇU DES IMAGES
+function renderImagePreview() {
+  assistantPreview.innerHTML = "";
+
+  if (!selectedImages.length) return;
+
+  const container = document.createElement("div");
+  container.style.display = "flex";
+  container.style.flexWrap = "wrap";
+  container.style.gap = "12px";
+  container.style.marginTop = "10px";
+
+  selectedImages.forEach((item, index) => {
+    const wrapper = document.createElement("div");
+    wrapper.style.display = "flex";
+    wrapper.style.flexDirection = "column";
+    wrapper.style.alignItems = "center";
+    wrapper.style.gap = "5px";
+
+    const image = document.createElement("img");
+    image.src = item.dataURL;
+    image.alt = "Aperçu de l'image " + (index + 1);
+    image.style.width = "75px";
+    image.style.height = "75px";
+    image.style.objectFit = "cover";
+    image.style.borderRadius = "10px";
+
+    const info = document.createElement("span");
+    info.textContent = item.file.name;
+    info.style.fontSize = "11px";
+    info.style.maxWidth = "100px";
+    info.style.overflow = "hidden";
+    info.style.textOverflow = "ellipsis";
+    info.style.whiteSpace = "nowrap";
+
+    const removeButton = document.createElement("button");
+    removeButton.type = "button";
+    removeButton.className = "ghost";
+    removeButton.textContent = "Retirer";
+
+    removeButton.addEventListener("click", () => {
+      selectedImages.splice(index, 1);
+      renderImagePreview();
+    });
+
+    wrapper.append(image, info, removeButton);
+    container.appendChild(wrapper);
+  });
+
+  const counter = document.createElement("div");
+  counter.style.width = "100%";
+  counter.style.fontSize = "12px";
+  counter.style.color = "var(--mute)";
+  counter.textContent =
+    selectedImages.length + " / " + MAX_IMAGES + " image(s) sélectionnée(s)";
+
+  container.appendChild(counter);
+  assistantPreview.appendChild(container);
+}
+
+// AJOUT DE PLUSIEURS IMAGES
+assistantImageInput.addEventListener("change", async () => {
+  const files = Array.from(assistantImageInput.files || []);
+
+  if (!files.length) return;
+
+  for (const file of files) {
+    if (selectedImages.length >= MAX_IMAGES) {
+      toast("Maximum : " + MAX_IMAGES + " images par message.", "error");
+      break;
+    }
+
+    if (!ALLOWED_IMAGE_TYPES.includes(file.type)) {
+      toast(file.name + " : format non accepté. Utilise JPG, PNG ou WEBP.", "error");
+      continue;
+    }
+
+    if (file.size > MAX_IMAGE_SIZE) {
+      toast(file.name + " : image trop volumineuse. Maximum : 1 Mo par image.", "error");
+      continue;
+    }
+
+    try {
+      const dataURL = await readImageAsDataURL(file);
+
+      selectedImages.push({
+        file,
+        dataURL
+      });
+
+    } catch (error) {
+      toast(error.message, "error");
+    }
+  }
+
+  assistantImageInput.value = "";
+  renderImagePreview();
+});
+
+// SUPPRESSION DES IMAGES
+function clearSelectedImages() {
+  selectedImages = [];
+  assistantImageInput.value = "";
+  assistantPreview.innerHTML = "";
+}
+
+// ENVOI DU MESSAGE ET DES IMAGES
+async function sendAssistantMessage() {
+  const message = assistantInput.value.trim();
+
+  if ((!message && !selectedImages.length) || assistantBusy) return;
+
+  if (!activeConversationId) createConversation();
+
+  const conversation = getActiveConversation();
+  if (!conversation) return;
+
+  const imagesToSend = selectedImages.map(item => ({
+    data: item.dataURL.split(",")[1],
+    mimeType: item.file.type
+  }));
+
+  const imageDataURLs = selectedImages.map(item => item.dataURL);
+
+  const messageToSend = message ||
+    (imagesToSend.length > 1
+      ? "Analyse ces images."
+      : "Analyse cette image.");
+
+  if (conversation.messages.length === 0) {
+    conversation.title = message
+      ? (message.length > 35 ? message.substring(0, 35) + "..." : message)
+      : (imagesToSend.length > 1 ? "Analyse de plusieurs images" : "Analyse d'image");
+  }
+
+  // L'historique est capturé avant le message actuel
+  const history = conversation.messages.map(item => ({
+    role: item.role,
+    content: item.content || "",
+    images: item.images || (item.imageData ? [item.imageData] : [])
+  }));
+
+  conversation.messages.push({
+    role: "user",
+    content: message,
+    images: imageDataURLs
+  });
+
+  saveConversations();
+  renderHistory();
+  renderConversation();
+
+  assistantInput.value = "";
+  clearSelectedImages();
+
+  assistantBusy = true;
+  assistantSend.disabled = true;
+  assistantSend.textContent = "Réflexion...";
+
+  const loading = document.createElement("div");
+  loading.className = "assistant-loading";
+  loading.textContent = "L'Assistant IA réfléchit...";
+  assistantMessages.appendChild(loading);
+  assistantMessages.scrollTop = assistantMessages.scrollHeight;
+
+  try {
+    const response = await fetch(`${API}/api/assistant`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        message: messageToSend,
+        images: imagesToSend,
+        history
+      })
+    });
+
+    let data;
+
+    try {
+      data = await response.json();
+    } catch {
+      throw new Error("Réponse invalide du serveur.");
+    }
+
+    if (!response.ok) {
+      throw new Error(data.error || data.message || "Erreur du serveur");
+    }
+
+    // Convertir les images reçues en data URLs
+    const generatedImages = Array.isArray(data.images)
+      ? data.images
+          .filter(image =>
+            image &&
+            typeof image.data === "string" &&
+            image.data.length > 0
+          )
+          .map(image =>
+            `data:${image.mimeType || "image/png"};base64,${image.data}`
+          )
+      : [];
+
+    conversation.messages.push({
+      role: "assistant",
+      content: data.response || (
+        generatedImages.length
+          ? "Voici l'image que j'ai créée."
+          : "Je n'ai pas reçu de réponse."
+      ),
+      images: generatedImages
+    });
+
+    saveConversations();
+
+  } catch (error) {
+    conversation.messages.push({
+      role: "assistant",
+      content: "Erreur : " + error.message
+    });
+
+    saveConversations();
+
+  } finally {
+    assistantBusy = false;
+    assistantSend.disabled = false;
+    assistantSend.textContent = "Envoyer";
+
+    renderHistory();
+    renderConversation();
+    assistantInput.focus();
+  }
+}
+
+// BOUTONS ET CLAVIER
+newChatButton.addEventListener("click", () => {
+  if (assistantBusy) return;
+  clearSelectedImages();
+  createConversation();
+});
+
+assistantSend.addEventListener("click", sendAssistantMessage);
+
+assistantInput.addEventListener("keydown", event => {
+  if (event.key === "Enter" && !event.shiftKey) {
+    event.preventDefault();
+    sendAssistantMessage();
+  }
+});
+
+// INITIALISATION
+renderHistory();
+
+if (conversations.length > 0) {
+  activeConversationId = conversations[0].id;
+  renderHistory();
+  renderConversation();
+} else {
+  createConversation();
+}
 </script>
 
 </body>

@@ -193,6 +193,9 @@ function getTasks() {
 function getAgents() {
     return Array.from(agents.values());
 }
+function getTask(taskId) {
+    return tasks.get(Number(taskId));
+}
 
 loadData();
 
@@ -203,5 +206,6 @@ module.exports = {
     completeTask,
     failTask,
     getTasks,
+    getTask,
     getAgents
 };

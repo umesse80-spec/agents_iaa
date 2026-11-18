@@ -4,8 +4,8 @@
       "id": 1,
       "name": "Documentation Specialist API",
       "role": "documentation",
-      "status": "working",
-      "currentTask": 3
+      "status": "idle",
+      "currentTask": null
     },
     {
       "id": 2,
@@ -25,6 +25,13 @@
       "id": 4,
       "name": "Test Agent",
       "role": "testing",
+      "status": "idle",
+      "currentTask": null
+    },
+    {
+      "id": 5,
+      "name": "Orchestrateur IA",
+      "role": "orchestration",
       "status": "idle",
       "currentTask": null
     }
