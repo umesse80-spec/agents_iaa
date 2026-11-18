@@ -14,11 +14,50 @@
 })();
 </script>
 
-<link rel="stylesheet" href="style.css">
+
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@11.11.1/styles/github-dark.min.css">
+
+<link rel="stylesheet" href="style.css">
+
 <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/dompurify@3.2.6/dist/purify.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/highlight.js@11.11.1/highlight.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/highlight.js@11.11.1/build/highlight.min.js"></script>
+
+<!-- WORKFLOW AUTOMATIQUE FIXE EN BAS -->
+<style>
+#orchestrator-form {
+  position: fixed !important;
+  left: 340px;
+  right: 24px;
+  bottom: 14px;
+  z-index: 1000;
+  max-height: 210px;
+  overflow-y: auto;
+  background: var(--panel, #1c1c1e);
+  border: 1px solid var(--border, #333);
+  border-radius: 20px;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
+}
+
+/* Empêche le formulaire de cacher les missions */
+#agents-view {
+  padding-bottom: 240px;
+}
+
+/* Adaptation aux écrans plus petits */
+@media (max-width: 850px) {
+  #orchestrator-form {
+    left: 12px;
+    right: 12px;
+    bottom: 10px;
+    max-height: 190px;
+  }
+
+  #agents-view {
+    padding-bottom: 220px;
+  }
+}
+</style>
 </head>
 
 <body>
@@ -307,43 +346,92 @@ function renderMarkdown(text) {
   return DOMPurify.sanitize(marked.parse(normalizeMarkdown(text)));
 }
 
+
 function enhanceCodeBlocks(container) {
   container.querySelectorAll("pre").forEach(pre => {
     const code = pre.querySelector("code");
     if (!code) return;
 
-    if (window.hljs) {
-      try { hljs.highlightElement(code); }
-      catch (error) { console.warn(error); }
+    if (window.hljs && !code.dataset.highlighted) {
+      try {
+        hljs.highlightElement(code);
+      } catch (error) {
+        console.warn(error);
+      }
     }
 
     if (pre.querySelector(".copy-code")) return;
 
+    // Séparer le défilement du code du bouton Copier
+    let codeScroll = pre.querySelector(".code-scroll");
+
+    if (!codeScroll) {
+      codeScroll = document.createElement("div");
+      codeScroll.className = "code-scroll";
+
+      pre.insertBefore(codeScroll, code);
+      codeScroll.appendChild(code);
+    }
+
     const button = document.createElement("button");
     button.className = "copy-code";
     button.type = "button";
-    button.textContent = "Copier";
+    button.title = "Copier le code";
+    button.setAttribute("aria-label", "Copier le code");
+
+    const copyIcon = `
+      <svg viewBox="0 0 24 24" fill="none"
+        stroke="currentColor" stroke-width="2"
+        stroke-linecap="round" stroke-linejoin="round">
+        <rect x="8" y="8" width="13" height="13" rx="2"/>
+        <path d="M16 8V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h3"/>
+      </svg>`;
+
+    const checkIcon = `
+      <svg viewBox="0 0 24 24" fill="none"
+        stroke="currentColor" stroke-width="2.5"
+        stroke-linecap="round" stroke-linejoin="round">
+        <path d="m5 12 4 4L19 6"/>
+      </svg>`;
+
+    button.innerHTML = copyIcon;
 
     button.addEventListener("click", async () => {
       try {
         await navigator.clipboard.writeText(code.textContent);
-        button.textContent = "Copié !";
-        toast("Code copié dans le presse-papiers", "success");
       } catch (error) {
         const area = document.createElement("textarea");
         area.value = code.textContent;
         document.body.appendChild(area);
         area.select();
+
         const copied = document.execCommand("copy");
         area.remove();
-        button.textContent = copied ? "Copié !" : "Copie impossible";
+
+        if (!copied) {
+          toast("Impossible de copier le code", "error");
+          return;
+        }
       }
-      setTimeout(() => button.textContent = "Copier", 2000);
+
+      button.innerHTML = checkIcon;
+      button.classList.add("copied");
+      button.title = "Code copié !";
+
+      toast("Code copié dans le presse-papiers", "success");
+
+      setTimeout(() => {
+        button.innerHTML = copyIcon;
+        button.classList.remove("copied");
+        button.title = "Copier le code";
+      }, 2000);
     });
 
-    pre.appendChild(button);
+    // Le bouton reste indépendant de la zone de défilement du code
+    pre.insertBefore(button, codeScroll);
   });
 }
+
 
 function createMarkdownElement(text) {
   const container = document.createElement("div");
@@ -860,7 +948,6 @@ function renderConversation() {
 
       element.appendChild(createMarkdownElement(message.content || ""));
 
-      // Afficher les images générées par l'IA
       const generatedImages = Array.isArray(message.images)
         ? message.images
         : [];
@@ -1025,7 +1112,6 @@ async function sendAssistantMessage() {
       : (imagesToSend.length > 1 ? "Analyse de plusieurs images" : "Analyse d'image");
   }
 
-  // L'historique est capturé avant le message actuel
   const history = conversation.messages.map(item => ({
     role: item.role,
     content: item.content || "",
@@ -1080,7 +1166,6 @@ async function sendAssistantMessage() {
       throw new Error(data.error || data.message || "Erreur du serveur");
     }
 
-    // Convertir les images reçues en data URLs
     const generatedImages = Array.isArray(data.images)
       ? data.images
           .filter(image =>
