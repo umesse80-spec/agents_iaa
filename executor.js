@@ -3,7 +3,8 @@ require("dotenv").config();
 
 const { GoogleGenAI } = require("@google/genai");
 const runtime = require("./runtime");
-
+const plugins = require("./plugins");
+const gmailAgent = require("./agents/gmailAgent");
 const ai = new GoogleGenAI({
     apiKey: process.env.GEMINI_API_KEY
 });
@@ -80,6 +81,31 @@ Utilise ce résultat pour réaliser ta mission.
             throw new Error("Agent introuvable");
         }
 
+        let gmailContext = "";
+
+if (agent.role === "email") {
+    const gmailPlugin = plugins.getAll().find(
+        plugin => plugin.id === "gmail"
+    );
+
+    if (!gmailPlugin?.installed || !gmailPlugin?.enabled) {
+        throw new Error("Le plugin Gmail doit être installé et activé.");
+    }
+
+    console.log("[EXECUTOR] Connexion au plugin Gmail...");
+
+    const emails = await gmailAgent.getEmails(10);
+
+    gmailContext = `
+Voici les 10 derniers e-mails récupérés depuis Gmail :
+
+${JSON.stringify(emails, null, 2)}
+
+Tu peux analyser ces e-mails pour réaliser ta mission.
+Tu ne dois jamais prétendre avoir envoyé ou supprimé un e-mail.
+`;
+}
+
         const prompt = `
 Tu es un agent IA nommé ${agent.name}.
 Ton rôle est : ${agent.role}.
@@ -88,6 +114,8 @@ Voici ta mission :
 ${task.description}
 
 ${previousResult}
+
+${gmailContext}
 
 Réalise cette mission et fournis un résultat clair, précis et structuré.
 `;

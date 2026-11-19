@@ -1,2 +1,10 @@
 node_modules/
 .env
+
+# Identifiants Google
+gmail-credentials.json
+token.json
+token-backup.json
+
+# Données personnelles
+data/gmail-analyses.json

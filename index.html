@@ -14,16 +14,13 @@
 })();
 </script>
 
-
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@11.11.1/styles/github-dark.min.css">
-
 <link rel="stylesheet" href="style.css">
 
 <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/dompurify@3.2.6/dist/purify.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/highlight.js@11.11.1/build/highlight.min.js"></script>
 
-<!-- WORKFLOW AUTOMATIQUE FIXE EN BAS -->
 <style>
 #orchestrator-form {
   position: fixed !important;
@@ -39,12 +36,10 @@
   box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
 }
 
-/* Empêche le formulaire de cacher les missions */
 #agents-view {
   padding-bottom: 240px;
 }
 
-/* Adaptation aux écrans plus petits */
 @media (max-width: 850px) {
   #orchestrator-form {
     left: 12px;
@@ -56,6 +51,34 @@
   #agents-view {
     padding-bottom: 220px;
   }
+}
+
+/* Réponse Gmail */
+#gmail-reply-editor {
+  width: 100%;
+  min-height: 170px;
+  resize: vertical;
+  padding: 14px;
+  margin-top: 10px;
+  border: 1px solid var(--border, #333);
+  border-radius: 12px;
+  background: var(--panel, #1c1c1e);
+  color: var(--text, inherit);
+  font: inherit;
+  line-height: 1.6;
+  box-sizing: border-box;
+}
+
+.gmail-reply-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.gmail-reply-status {
+  margin-top: 10px;
+  font-size: 13px;
 }
 </style>
 </head>
@@ -75,8 +98,8 @@
 
   <nav class="view-nav">
     <button type="button" id="show-agents" class="view-button active">AGENTS</button>
-    <button type="button" id="show-assistant" class="view-button">ASSISTANT</button>
-  </nav>
+<button type="button" id="show-assistant" class="view-button">ASSISTANT</button>
+<button type="button" id="show-gmail" class="view-button">GMAIL</button>  </nav>
 
   <div class="status-pill">
     <span class="dot" id="status-dot"></span>
@@ -170,56 +193,198 @@
   </div>
 </div>
 
+
+<!-- ESPACE GMAIL -->
+<div id="gmail-view" class="hidden">
+  <div class="gmail-dashboard">
+
+    <aside class="gmail-sidebar">
+      <div class="gmail-sidebar-brand">
+        <span class="gmail-brand-icon">✦</span>
+        <div>
+          <strong>Gmail Intelligence</strong>
+          <small>Centre de messagerie IA</small>
+        </div>
+      </div>
+
+      <button type="button" id="gmail-refresh" class="gmail-refresh">
+        ↻ Actualiser les e-mails
+      </button>
+
+      <div class="gmail-sidebar-label">MESSAGERIE</div>
+
+      <button type="button" class="gmail-nav-item active" data-filter="all">
+        <span>▣</span> Tous les e-mails
+        <strong id="gmail-total">0</strong>
+      </button>
+
+      <button type="button" class="gmail-nav-item" data-filter="urgent">
+        <span>⚡</span> Urgents
+        <strong id="gmail-urgent">0</strong>
+      </button>
+
+      <button type="button" class="gmail-nav-item" data-filter="important">
+        <span>★</span> Importants
+        <strong id="gmail-important">0</strong>
+      </button>
+
+      <button type="button" class="gmail-nav-item" data-filter="normal">
+        <span>▤</span> Normaux
+      </button>
+
+      <button type="button" class="gmail-nav-item" data-filter="publicité">
+        <span>◇</span> Publicités
+        <strong id="gmail-ads">0</strong>
+      </button>
+
+      <div class="gmail-sidebar-footer">
+        <span class="gmail-status-dot"></span>
+        <span id="gmail-status">Connexion à Gmail...</span>
+      </div>
+    </aside>
+
+    <main class="gmail-main">
+
+      <header class="gmail-main-header">
+        <div>
+          <h2>Boîte de réception</h2>
+          <p>Vos e-mails analysés et organisés par AGENTS_IA</p>
+        </div>
+      </header>
+
+      <div class="gmail-search">
+        <span>⌕</span>
+        <input
+          type="search"
+          id="gmail-search"
+          placeholder="Rechercher un expéditeur, un objet ou un e-mail..."
+        >
+      </div>
+
+      <div class="gmail-workspace">
+
+        <section class="gmail-list-panel">
+          <div class="gmail-list-header">
+            <div>
+              <strong>Messages</strong>
+              <span>Analyse intelligente</span>
+            </div>
+
+            <select id="gmail-filter" aria-label="Filtrer les e-mails">
+              <option value="all">Tous</option>
+              <option value="urgent">Urgents</option>
+              <option value="important">Importants</option>
+              <option value="normal">Normaux</option>
+              <option value="publicité">Publicités</option>
+            </select>
+          </div>
+
+          <div id="gmail-email-list">
+            <p>Chargement des analyses...</p>
+          </div>
+        </section>
+
+        <section class="gmail-detail-panel">
+          <div id="gmail-detail">
+            <div class="gmail-empty-detail">
+              <div class="gmail-empty-icon">✉</div>
+              <h3>Aucun message sélectionné</h3>
+              <p>Sélectionne un e-mail pour consulter son contenu et son analyse IA.</p>
+            </div>
+          </div>
+        </section>
+
+      </div>
+    </main>
+  </div>
+</div>
+
+
+
 <!-- ESPACE ASSISTANT -->
 <div id="assistant-view" class="hidden">
   <div class="assistant-layout">
 
     <aside class="assistant-sidebar">
+
+      <div class="sidebar-top">
+        <strong class="sidebar-logo">AGENTS_IA</strong>
+        <button type="button" class="sidebar-icon" title="Rechercher">⌕</button>
+        <button type="button" id="toggle-history" class="sidebar-icon" title="Réduire la barre">◫</button>
+      </div>
+
       <button type="button" id="new-chat-button" class="new-chat-button">
-        <span>＋</span> Nouveau chat
+        <span>✎</span> Nouveau chat
       </button>
 
-      <div class="history-title">Historique</div>
+      
+
+<nav class="assistant-nav">
+  <button type="button" class="assistant-nav-item">
+  ▧ <span>Images</span>
+</button>
+
+<button type="button" id="sidebar-mail-button" class="assistant-nav-item">
+  ✉ <span>Mail</span>
+</button>
+
+<button type="button" id="sidebar-agents-button" class="assistant-nav-item">
+  ⊞ <span>Agents</span>
+</button>
+
+<button type="button" id="sidebar-plugins-button" class="assistant-nav-item">
+  ◎ <span>Plugins</span>
+</button>
+
+<button type="button" class="assistant-nav-item">
+  ⊕ <span>Explorer</span>
+</button>
+</nav>
+
+
+
+      <div class="sidebar-section-title">Projets</div>
+      <div class="sidebar-empty">Aucun projet</div>
+
+      <div class="sidebar-section-title">Récents</div>
 
       <div id="chat-history" class="chat-history">
         <p class="history-empty">Tes conversations apparaîtront ici.</p>
       </div>
+
+      <div class="sidebar-account">
+        <div class="account-avatar">AI</div>
+        <div>
+          <strong>AGENTS_IA</strong>
+          <small>Assistant personnel</small>
+        </div>
+      </div>
+
     </aside>
 
     <main class="assistant-panel">
 
       <div class="assistant-header">
-        <button type="button" id="toggle-history" class="ghost"
-                title="Afficher ou masquer l'historique"
-                aria-label="Masquer l'historique">
-          ☰
-        </button>
-
-        <div>
-          <h2>Assistant IA</h2>
-          <p>Ton assistant personnel connecté à AGENTS_IA</p>
-        </div>
-
-        <span class="count-chip">En ligne</span>
+        <div class="assistant-header-spacer"></div>
+        <span class="assistant-offer">♔ Offre gratuite</span>
+        <span class="assistant-profile-icon">◌</span>
       </div>
 
       <div class="assistant-messages" id="assistant-messages">
         <div class="assistant-welcome">
-          <div class="thinking-logo"></div>
-          <h3>Comment puis-je t'aider ?</h3>
-          <p>Pose-moi une question, envoie des images ou demande-moi de travailler sur un projet.</p>
+          <h3>Par où commencer ?</h3>
         </div>
       </div>
 
       <div class="assistant-composer">
 
         <textarea id="assistant-input"
-          placeholder="Écris ton message..."
-          rows="2"></textarea>
+          placeholder="Demander à AGENTS_IA"
+          rows="1"></textarea>
 
         <div class="assistant-tools">
 
-          <label for="assistant-image" class="ghost assistant-upload" title="Ajouter des images">
+          <label for="assistant-image" class="assistant-upload" title="Ajouter des images">
             ＋
           </label>
 
@@ -231,8 +396,12 @@
             hidden
           >
 
+          <span class="assistant-analyze">◉ Analyser</span>
+
+          <button type="button" class="assistant-mic" title="Microphone">♩</button>
+
           <button type="button" class="primary" id="assistant-send">
-            Envoyer
+            ↑
           </button>
 
         </div>
@@ -240,9 +409,61 @@
         <div id="assistant-preview"></div>
 
       </div>
+
     </main>
+
   </div>
 </div>
+
+
+
+<!-- ESPACE PLUGINS -->
+<div id="plugins-view" class="hidden">
+  <div class="plugins-container">
+
+    <header class="plugins-header">
+      <div>
+        <h2>Plugins</h2>
+        <p>Développe les capacités de tes agents avec des extensions.</p>
+      </div>
+      <span class="plugins-count" id="plugins-count">0 plugin installé</span>
+    </header>
+
+    <div class="plugins-tabs">
+      <button type="button" class="plugins-tab active" data-tab="catalog">
+        Découvrir
+      </button>
+      <button type="button" class="plugins-tab" data-tab="installed">
+        Installés
+      </button>
+    </div>
+
+    <section id="plugins-catalog">
+      <div class="plugins-section-title">
+        <h3>Bibliothèque de plugins</h3>
+        <p>Découvre les extensions disponibles pour AGENTS_IA.</p>
+      </div>
+
+      <div class="plugins-grid" id="plugins-catalog-list">
+        <p>Chargement des plugins...</p>
+      </div>
+    </section>
+
+    <section id="plugins-installed" class="hidden">
+      <div class="plugins-section-title">
+        <h3>Mes plugins installés</h3>
+        <p>Gère les extensions installées et leur activation.</p>
+      </div>
+
+      <div id="installed-plugins-list">
+        <p>Aucun plugin installé pour le moment.</p>
+      </div>
+    </section>
+
+  </div>
+</div>
+
+
 
 <div id="toasts"></div>
 
@@ -304,22 +525,442 @@ function toast(message, kind = "") {
   setTimeout(() => el.remove(), 3500);
 }
 
+
 // NAVIGATION
 const agentsView = document.getElementById("agents-view");
 const assistantView = document.getElementById("assistant-view");
+const gmailView = document.getElementById("gmail-view");
+const pluginsView = document.getElementById("plugins-view");
+
 const showAgentsButton = document.getElementById("show-agents");
 const showAssistantButton = document.getElementById("show-assistant");
+const showGmailButton = document.getElementById("show-gmail");
 
 function showView(view) {
   const showAgents = view === "agents";
+  const showAssistant = view === "assistant";
+  const showGmail = view === "gmail";
+  const showPlugins = view === "plugins";
+
   agentsView.classList.toggle("hidden", !showAgents);
-  assistantView.classList.toggle("hidden", showAgents);
+  assistantView.classList.toggle("hidden", !showAssistant);
+  gmailView.classList.toggle("hidden", !showGmail);
+  pluginsView.classList.toggle("hidden", !showPlugins);
+
   showAgentsButton.classList.toggle("active", showAgents);
-  showAssistantButton.classList.toggle("active", !showAgents);
+  showAssistantButton.classList.toggle("active", showAssistant);
+  showGmailButton.classList.toggle("active", showGmail);
 }
 
 showAgentsButton.addEventListener("click", () => showView("agents"));
+
 showAssistantButton.addEventListener("click", () => showView("assistant"));
+
+showGmailButton.addEventListener("click", () => {
+  showView("gmail");
+  loadGmailEmails();
+});
+
+// Navigation de la barre latérale
+document.getElementById("sidebar-agents-button")
+  .addEventListener("click", () => showView("agents"));
+
+document.getElementById("sidebar-mail-button")
+  .addEventListener("click", () => {
+    showView("gmail");
+    loadGmailEmails();
+  });
+
+document.getElementById("sidebar-plugins-button")
+  .addEventListener("click", () => showView("plugins"));
+
+// Onglets Plugins
+document.querySelectorAll(".plugins-tab").forEach(button => {
+  button.addEventListener("click", () => {
+    const tab = button.dataset.tab;
+
+    document.querySelectorAll(".plugins-tab").forEach(item => {
+      item.classList.toggle("active", item === button);
+    });
+
+    document.getElementById("plugins-catalog")
+      .classList.toggle("hidden", tab !== "catalog");
+
+    document.getElementById("plugins-installed")
+      .classList.toggle("hidden", tab !== "installed");
+  });
+});
+
+// ==========================================
+// COMMANDES DE LA NOUVELLE INTERFACE GMAIL
+// ==========================================
+
+document.getElementById("gmail-refresh").addEventListener("click", () => {
+    loadGmailEmails();
+});
+
+document.getElementById("gmail-filter").addEventListener("change", () => {
+    gmailRenderList();
+
+    document.querySelectorAll(".gmail-nav-item").forEach(button => {
+        button.classList.toggle(
+            "active",
+            button.dataset.filter === document.getElementById("gmail-filter").value
+        );
+    });
+});
+
+// Filtres dans la barre latérale
+document.querySelectorAll(".gmail-nav-item").forEach(button => {
+    button.addEventListener("click", () => {
+        const filter = button.dataset.filter;
+
+        document.getElementById("gmail-filter").value = filter;
+
+        document.querySelectorAll(".gmail-nav-item").forEach(item => {
+            item.classList.toggle("active", item === button);
+        });
+
+        gmailRenderList();
+    });
+});
+
+// Recherche dans les e-mails affichés
+document.getElementById("gmail-search").addEventListener("input", event => {
+    const search = event.target.value.toLowerCase().trim();
+
+    document.querySelectorAll(".gmail-email-item").forEach(email => {
+        const content = email.textContent.toLowerCase();
+        email.style.display = content.includes(search) ? "" : "none";
+    });
+});
+
+
+// ========================================
+// GMAIL INTELLIGENCE — TABLEAU DE BORD
+// ========================================
+
+let gmailAnalysesCache = [];
+let gmailSelectedEmail = null;
+
+function gmailEscapeHTML(value) {
+  return String(value ?? "").replace(/[&<>"']/g, char => ({
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    '"': "&quot;",
+    "'": "&#039;"
+  })[char]);
+}
+
+function gmailFormatDate(value) {
+  if (!value) return "Date inconnue";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+
+  return date.toLocaleString("fr-FR", {
+    dateStyle: "short",
+    timeStyle: "short"
+  });
+}
+
+function gmailCategoryRank(category) {
+  return {
+    urgent: 0,
+    important: 1,
+    normal: 2,
+    publicité: 3
+  }[category] ?? 4;
+}
+
+function gmailSortAnalyses(analyses) {
+  return [...analyses].sort((a, b) => {
+    const difference =
+      gmailCategoryRank(a.analysis?.category) -
+      gmailCategoryRank(b.analysis?.category);
+
+    if (difference !== 0) return difference;
+
+    return new Date(b.email?.date || 0) -
+           new Date(a.email?.date || 0);
+  });
+}
+
+function gmailUpdateStats(analyses) {
+  document.getElementById("gmail-total").textContent = analyses.length;
+
+  document.getElementById("gmail-urgent").textContent =
+    analyses.filter(item =>
+      item.analysis?.category === "urgent" ||
+      item.analysis?.urgency === "élevée"
+    ).length;
+
+  document.getElementById("gmail-important").textContent =
+    analyses.filter(item =>
+      item.analysis?.category === "important"
+    ).length;
+
+  document.getElementById("gmail-ads").textContent =
+    analyses.filter(item =>
+      item.analysis?.category === "publicité"
+    ).length;
+}
+
+function gmailRenderList() {
+  const list = document.getElementById("gmail-email-list");
+  const filter = document.getElementById("gmail-filter").value;
+
+  let analyses = gmailSortAnalyses(gmailAnalysesCache);
+
+  if (filter === "urgent") {
+    analyses = analyses.filter(item =>
+      item.analysis?.category === "urgent" ||
+      item.analysis?.urgency === "élevée"
+    );
+  } else if (filter !== "all") {
+    analyses = analyses.filter(item =>
+      item.analysis?.category === filter
+    );
+  }
+
+  if (!analyses.length) {
+    list.innerHTML = "<p>Aucun e-mail dans cette catégorie.</p>";
+    return;
+  }
+
+  list.innerHTML = analyses.map((item, index) => {
+    const email = item.email || {};
+    const analysis = item.analysis || {};
+
+    return `
+      <div class="gmail-email-item" data-gmail-index="${index}">
+        <div class="gmail-email-subject">
+          ${gmailEscapeHTML(email.subject || "Sans objet")}
+        </div>
+
+        <div class="gmail-email-sender">
+          ${gmailEscapeHTML(email.sender || "Expéditeur inconnu")}
+        </div>
+
+        <span class="gmail-category ${gmailEscapeHTML(analysis.category || "normal")}">
+          ${gmailEscapeHTML(analysis.category || "normal")}
+        </span>
+
+        <span class="gmail-urgency">
+          Urgence : ${gmailEscapeHTML(analysis.urgency || "Non définie")}
+        </span>
+
+        <div class="gmail-urgency" style="margin-top:8px;">
+          ${gmailEscapeHTML(gmailFormatDate(email.date))}
+        </div>
+      </div>
+    `;
+  }).join("");
+
+  list.querySelectorAll(".gmail-email-item").forEach(card => {
+    card.addEventListener("click", () => {
+      const index = Number(card.dataset.gmailIndex);
+      const selected = analyses[index];
+
+      list.querySelectorAll(".gmail-email-item").forEach(item => {
+        item.classList.remove("active");
+      });
+
+      card.classList.add("active");
+      gmailShowDetail(selected);
+    });
+  });
+}
+
+function gmailShowDetail(item) {
+  const detail = document.getElementById("gmail-detail");
+
+  const email = item.email || {};
+  const analysis = item.analysis || {};
+
+  gmailSelectedEmail = item;
+
+  const replySection = analysis.replyDraft
+    ? `
+      <div class="gmail-detail-section">
+        <h3>Réponse proposée par AGENTS_IA</h3>
+
+        <textarea
+          id="gmail-reply-editor"
+          style="width:100%;min-height:160px;resize:vertical;"
+        >${gmailEscapeHTML(analysis.replyDraft)}</textarea>
+
+        <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:12px;">
+          <button type="button" id="gmail-copy-reply" class="gmail-copy">
+            Copier la réponse
+          </button>
+
+          <button type="button" id="gmail-send-reply" class="primary">
+            Envoyer la réponse
+          </button>
+        </div>
+
+        <p id="gmail-reply-status"></p>
+      </div>
+    `
+    : "";
+
+  detail.innerHTML = `
+    <h2 class="gmail-detail-title">
+      ${gmailEscapeHTML(email.subject || "Sans objet")}
+    </h2>
+
+    <div class="gmail-detail-meta">
+      De : ${gmailEscapeHTML(email.sender || "Inconnu")}
+      <br>
+      Date : ${gmailEscapeHTML(gmailFormatDate(email.date))}
+    </div>
+
+    <div class="gmail-detail-section">
+      <h3>Classification</h3>
+      <p>
+        ${gmailEscapeHTML(analysis.category || "Non définie")}
+        — Urgence : ${gmailEscapeHTML(analysis.urgency || "Non définie")}
+      </p>
+    </div>
+
+    <div class="gmail-detail-section">
+      <h3>Résumé</h3>
+      <p>${gmailEscapeHTML(analysis.summary || "Aucun résumé disponible.")}</p>
+    </div>
+
+    <div class="gmail-detail-section">
+      <h3>Demande de l'expéditeur</h3>
+      <p>${gmailEscapeHTML(analysis.request || "Aucune demande détectée.")}</p>
+    </div>
+
+    <div class="gmail-detail-section">
+      <h3>Action recommandée</h3>
+      <p>${gmailEscapeHTML(analysis.action || "Aucune action recommandée.")}</p>
+    </div>
+
+    ${replySection}
+  `;
+
+  const copyButton = document.getElementById("gmail-copy-reply");
+
+  if (copyButton) {
+    copyButton.addEventListener("click", async () => {
+      const editor = document.getElementById("gmail-reply-editor");
+
+      try {
+        await navigator.clipboard.writeText(editor.value);
+        copyButton.textContent = "Réponse copiée !";
+      } catch {
+        editor.select();
+        const copied = document.execCommand("copy");
+        copyButton.textContent = copied
+          ? "Réponse copiée !"
+          : "Copie impossible";
+      }
+    });
+  }
+
+  const sendButton = document.getElementById("gmail-send-reply");
+
+  if (sendButton) {
+    sendButton.addEventListener("click", async () => {
+      const editor = document.getElementById("gmail-reply-editor");
+      const replyText = editor.value.trim();
+      const status = document.getElementById("gmail-reply-status");
+
+      if (!replyText) {
+        toast("La réponse est vide.", "error");
+        return;
+      }
+
+      if (!email.id) {
+        toast("Identifiant de l'e-mail introuvable.", "error");
+        return;
+      }
+
+      const confirmed = window.confirm(
+        "Envoyer cette réponse à : " +
+        (email.sender || "cet expéditeur") +
+        " ?"
+      );
+
+      if (!confirmed) return;
+
+      sendButton.disabled = true;
+      sendButton.textContent = "Envoi en cours...";
+
+      try {
+        const response = await fetch(`${API}/api/gmail/send`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            emailId: email.id,
+            replyText
+          })
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data.error || "Impossible d'envoyer la réponse.");
+        }
+
+        status.textContent = "Réponse envoyée avec succès.";
+        sendButton.textContent = "Réponse envoyée";
+        toast("E-mail envoyé avec succès.", "success");
+
+      } catch (error) {
+        status.textContent = "Erreur : " + error.message;
+        sendButton.disabled = false;
+        sendButton.textContent = "Réessayer l'envoi";
+        toast(error.message, "error");
+      }
+    });
+  }
+}
+
+async function loadGmailEmails() {
+  const status = document.getElementById("gmail-status");
+  const list = document.getElementById("gmail-email-list");
+
+  status.textContent = "Chargement des analyses Gmail...";
+
+  try {
+    const response = await fetch(`${API}/api/gmail/analyses`);
+
+    if (!response.ok) {
+      throw new Error("Erreur lors de la récupération des analyses.");
+    }
+
+    const data = await response.json();
+
+    gmailAnalysesCache = Array.isArray(data.analyses)
+      ? data.analyses
+      : [];
+
+    gmailUpdateStats(gmailAnalysesCache);
+    gmailRenderList();
+
+    status.textContent =
+      `${gmailAnalysesCache.length} e-mail(s) analysé(s) automatiquement.`;
+
+    if (!gmailAnalysesCache.length) {
+      list.innerHTML = "<p>Aucune analyse disponible pour le moment.</p>";
+    }
+
+    document.getElementById("gmail-detail").innerHTML =
+      "<p>Sélectionne un e-mail pour consulter son analyse détaillée.</p>";
+
+  } catch (error) {
+    console.error("[GMAIL]", error);
+    status.textContent = "Impossible de charger les analyses Gmail.";
+    list.innerHTML =
+      "<p>Erreur de chargement. Vérifie que le serveur fonctionne.</p>";
+  }
+}
 
 // MARKDOWN
 marked.setOptions({ gfm: true, breaks: true });
@@ -346,7 +987,6 @@ function renderMarkdown(text) {
   return DOMPurify.sanitize(marked.parse(normalizeMarkdown(text)));
 }
 
-
 function enhanceCodeBlocks(container) {
   container.querySelectorAll("pre").forEach(pre => {
     const code = pre.querySelector("code");
@@ -362,7 +1002,6 @@ function enhanceCodeBlocks(container) {
 
     if (pre.querySelector(".copy-code")) return;
 
-    // Séparer le défilement du code du bouton Copier
     let codeScroll = pre.querySelector(".code-scroll");
 
     if (!codeScroll) {
@@ -427,11 +1066,9 @@ function enhanceCodeBlocks(container) {
       }, 2000);
     });
 
-    // Le bouton reste indépendant de la zone de défilement du code
     pre.insertBefore(button, codeScroll);
   });
 }
-
 
 function createMarkdownElement(text) {
   const container = document.createElement("div");
@@ -770,7 +1407,6 @@ const newChatButton = document.getElementById("new-chat-button");
 const assistantImageInput = document.getElementById("assistant-image");
 const assistantPreview = document.getElementById("assistant-preview");
 
-// OUVRIR / FERMER L'HISTORIQUE
 const toggleHistoryButton = document.getElementById("toggle-history");
 const assistantLayout = document.querySelector(".assistant-layout");
 
@@ -788,7 +1424,6 @@ const MAX_IMAGES = 5;
 const ALLOWED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp"];
 
 let selectedImages = [];
-
 let conversations = [];
 
 try {
@@ -1235,6 +1870,169 @@ if (conversations.length > 0) {
 } else {
   createConversation();
 }
+</script>
+
+
+<script>
+const PLUGINS_API = "http://localhost:3000/api/plugins";
+
+let pluginsData = [];
+
+async function loadPlugins() {
+    const catalog = document.getElementById("plugins-catalog-list");
+    const installed = document.getElementById("installed-plugins-list");
+
+    try {
+        const response = await fetch(PLUGINS_API);
+
+        if (!response.ok) {
+            throw new Error("Impossible de récupérer les plugins.");
+        }
+
+        pluginsData = await response.json();
+
+        renderPlugins();
+
+    } catch (error) {
+        catalog.innerHTML = "<p>Impossible de charger les plugins. Vérifie que le serveur est démarré.</p>";
+        installed.innerHTML = "<p>Connexion au serveur impossible.</p>";
+        console.error("[PLUGINS]", error);
+    }
+}
+
+function renderPlugins() {
+    const catalog = document.getElementById("plugins-catalog-list");
+    const installed = document.getElementById("installed-plugins-list");
+
+    const icons = {
+        "gmail": "✉",
+        "google-calendar": "📅",
+        "web-search": "🌐"
+    };
+
+    const installedPlugins = pluginsData.filter(plugin => plugin.installed);
+
+    document.getElementById("plugins-count").textContent =
+        installedPlugins.length + " plugin" +
+        (installedPlugins.length > 1 ? "s installés" : " installé");
+
+    catalog.innerHTML = pluginsData.map(plugin => `
+        <article class="plugin-card">
+            <div class="plugin-icon">${icons[plugin.id] || "🔌"}</div>
+            <h3>${plugin.name}</h3>
+            <p>${plugin.description}</p>
+            <span class="plugin-status">
+                ${plugin.installed ? "Installé" : "Disponible"}
+            </span>
+            <button
+                type="button"
+                class="primary"
+                data-plugin-action="install"
+                data-plugin-id="${plugin.id}"
+                ${plugin.installed ? "disabled" : ""}
+            >
+                ${plugin.installed ? "Déjà installé" : "Installer"}
+            </button>
+        </article>
+    `).join("");
+
+    if (installedPlugins.length === 0) {
+        installed.innerHTML = "<p class='empty'>Aucun plugin installé pour le moment.</p>";
+        return;
+    }
+
+    installed.innerHTML = installedPlugins.map(plugin => `
+        <article class="plugin-card">
+            <div class="plugin-icon">${icons[plugin.id] || "🔌"}</div>
+            <h3>${plugin.name}</h3>
+            <p>${plugin.description}</p>
+
+            <span class="plugin-status">
+                ${plugin.enabled ? "Activé" : "Désactivé"}
+            </span>
+
+            <button
+                type="button"
+                class="primary"
+                data-plugin-action="toggle"
+                data-plugin-id="${plugin.id}"
+                data-enabled="${!plugin.enabled}"
+            >
+                ${plugin.enabled ? "Désactiver" : "Activer"}
+            </button>
+
+            <button
+                type="button"
+                class="ghost"
+                data-plugin-action="uninstall"
+                data-plugin-id="${plugin.id}"
+            >
+                Désinstaller
+            </button>
+        </article>
+    `).join("");
+}
+
+async function pluginAction(action, pluginId, enabled) {
+    const routes = {
+        install: "/install",
+        uninstall: "/uninstall",
+        toggle: "/toggle"
+    };
+
+    try {
+        const body = { pluginId };
+
+        if (action === "toggle") {
+            body.enabled = enabled;
+        }
+
+        const response = await fetch(PLUGINS_API + routes[action], {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify(body)
+        });
+
+        const result = await response.json();
+
+        if (!response.ok) {
+            throw new Error(result.error || "Une erreur est survenue.");
+        }
+
+        await loadPlugins();
+
+    } catch (error) {
+        alert(error.message);
+        console.error("[PLUGINS]", error);
+    }
+}
+
+// Gestion des boutons des plugins
+document.addEventListener("click", event => {
+    const button = event.target.closest("[data-plugin-action]");
+
+    if (!button) return;
+
+    const action = button.dataset.pluginAction;
+    const pluginId = button.dataset.pluginId;
+    const enabled = button.dataset.enabled === "true";
+
+    pluginAction(action, pluginId, enabled);
+});
+
+// Actualiser les plugins quand on ouvre leur page
+document.getElementById("sidebar-plugins-button")
+    ?.addEventListener("click", loadPlugins);
+
+// Actualiser les plugins quand on change d'onglet
+document.querySelectorAll(".plugins-tab").forEach(button => {
+    button.addEventListener("click", loadPlugins);
+});
+
+// Premier chargement
+loadPlugins();
 </script>
 
 </body>
