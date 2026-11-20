@@ -1,24 +1,27 @@
 
 const http = require("http");
+const fs = require("fs");
+const path = require("path");
+const plugins = require("./plugins");
 const runtime = require("./runtime");
 const executor = require("./executor");
 const orchestrator = require("./orchestrator");
 const assistant = require("./assistant");
+const gmailAgent = require("./agents/gmailAgent");
 
 const PORT = 3000;
 
-// Enregistrement des agents
 const agents = [
     { id: 1, name: "Documentation Specialist API", role: "documentation" },
     { id: 2, name: "Code Analyst", role: "analysis" },
     { id: 3, name: "Developer Agent", role: "development" },
     { id: 4, name: "Test Agent", role: "testing" },
-    { id: 5, name: "Orchestrateur IA", role: "orchestration" }
+    { id: 5, name: "Orchestrateur IA", role: "orchestration" },
+    { id: 6, name: "Gmail Agent", role: "email" }
 ];
 
 agents.forEach(agent => runtime.registerAgent(agent));
 
-// Envoyer une réponse JSON en UTF-8
 function sendJSON(res, status, data) {
     res.writeHead(status, {
         "Content-Type": "application/json; charset=utf-8",
@@ -30,17 +33,26 @@ function sendJSON(res, status, data) {
     res.end(JSON.stringify(data, null, 2));
 }
 
-// Lire les données reçues en UTF-8
 function readBody(req) {
     return new Promise((resolve, reject) => {
         const chunks = [];
+        let totalSize = 0;
 
-        req.on("data", chunk => chunks.push(chunk));
+        req.on("data", chunk => {
+            totalSize += chunk.length;
+
+            if (totalSize > 100000) {
+                reject(new Error("Requête trop volumineuse."));
+                req.destroy();
+                return;
+            }
+
+            chunks.push(chunk);
+        });
 
         req.on("end", () => {
             try {
-                const body = Buffer.concat(chunks).toString("utf8");
-                resolve(JSON.parse(body));
+                resolve(JSON.parse(Buffer.concat(chunks).toString("utf8")));
             } catch (error) {
                 reject(new Error("JSON invalide : " + error.message));
             }
@@ -51,14 +63,14 @@ function readBody(req) {
 }
 
 const server = http.createServer(async (req, res) => {
+    const url = new URL(req.url, "http://localhost");
 
-    // Gestion des requêtes OPTIONS
     if (req.method === "OPTIONS") {
         return sendJSON(res, 200, {});
     }
 
-    // Accueil
-    if (req.method === "GET" && req.url === "/") {
+    // ACCUEIL
+    if (req.method === "GET" && url.pathname === "/") {
         return sendJSON(res, 200, {
             name: "AGENTS_IA",
             status: "online",
@@ -66,18 +78,222 @@ const server = http.createServer(async (req, res) => {
         });
     }
 
-    // Récupérer les agents
-    if (req.method === "GET" && req.url === "/api/agents") {
+
+    // ========================================
+    // GESTION DES PLUGINS
+    // ========================================
+
+    // Liste des plugins
+    if (req.method === "GET" && url.pathname === "/api/plugins") {
+        return sendJSON(res, 200, plugins.getAll());
+    }
+
+    // Installer un plugin
+    if (req.method === "POST" && url.pathname === "/api/plugins/install") {
+        try {
+            const data = await readBody(req);
+            const plugin = plugins.install(data.pluginId);
+
+            return sendJSON(res, 200, {
+                message: "Plugin installé",
+                plugin
+            });
+        } catch (error) {
+            return sendJSON(res, 400, {
+                error: error.message
+            });
+        }
+    }
+
+    // Désinstaller un plugin
+    if (req.method === "POST" && url.pathname === "/api/plugins/uninstall") {
+        try {
+            const data = await readBody(req);
+            const result = plugins.uninstall(data.pluginId);
+
+            return sendJSON(res, 200, {
+                message: "Plugin désinstallé",
+                plugins: result
+            });
+        } catch (error) {
+            return sendJSON(res, 400, {
+                error: error.message
+            });
+        }
+    }
+
+    // Activer ou désactiver un plugin
+    if (req.method === "POST" && url.pathname === "/api/plugins/toggle") {
+        try {
+            const data = await readBody(req);
+
+            const plugin = plugins.setEnabled(
+                data.pluginId,
+                data.enabled
+            );
+
+            return sendJSON(res, 200, {
+                message: "État du plugin modifié",
+                plugin
+            });
+        } catch (error) {
+            return sendJSON(res, 400, {
+                error: error.message
+            });
+        }
+    }
+
+
+    // AGENTS
+    if (req.method === "GET" && url.pathname === "/api/agents") {
         return sendJSON(res, 200, runtime.getAgents());
     }
 
-    // Récupérer les missions
-    if (req.method === "GET" && req.url === "/api/tasks") {
+    // MISSIONS
+    if (req.method === "GET" && url.pathname === "/api/tasks") {
         return sendJSON(res, 200, runtime.getTasks());
     }
 
-    // Créer une mission
-    if (req.method === "POST" && req.url === "/api/tasks") {
+    // STATUT GMAIL
+    if (req.method === "GET" && url.pathname === "/api/gmail/status") {
+        const tokenPath = path.join(__dirname, "token.json");
+        const connected = fs.existsSync(tokenPath);
+
+        return sendJSON(res, 200, {
+            connected,
+            message: connected
+                ? "Connexion Gmail enregistrée"
+                : "Connexion Gmail non configurée"
+        });
+    }
+
+    // ANALYSES GMAIL
+    if (req.method === "GET" && url.pathname === "/api/gmail/analyses") {
+        try {
+            const analysesPath = path.join(
+                __dirname,
+                "data",
+                "gmail-analyses.json"
+            );
+
+            if (!fs.existsSync(analysesPath)) {
+                return sendJSON(res, 200, {
+                    count: 0,
+                    analyses: []
+                });
+            }
+
+            const analyses = JSON.parse(
+                fs.readFileSync(analysesPath, "utf8")
+            );
+
+            const results = Object.values(analyses).reverse();
+
+            return sendJSON(res, 200, {
+                count: results.length,
+                analyses: results
+            });
+
+        } catch (error) {
+            console.error("[GMAIL] Erreur analyses :", error.message);
+
+            return sendJSON(res, 500, {
+                error: "Impossible de récupérer les analyses"
+            });
+        }
+    }
+
+    // RÉCUPÉRER LES E-MAILS
+    if (req.method === "GET" && url.pathname === "/api/gmail/emails") {
+        try {
+            const requestedLimit = Number(
+                url.searchParams.get("limit") || 20
+            );
+
+            if (
+                !Number.isInteger(requestedLimit) ||
+                requestedLimit < 1 ||
+                requestedLimit > 50
+            ) {
+                return sendJSON(res, 400, {
+                    error: "La limite doit être comprise entre 1 et 50"
+                });
+            }
+
+            const emails = await gmailAgent.getEmails(requestedLimit);
+
+            return sendJSON(res, 200, {
+                message: "E-mails récupérés avec succès",
+                count: emails.length,
+                emails
+            });
+
+        } catch (error) {
+            console.error("[GMAIL] Erreur :", error.message);
+
+            return sendJSON(res, 500, {
+                error: "Impossible de récupérer les e-mails",
+                details: error.message
+            });
+        }
+    }
+
+    // ENVOYER UNE RÉPONSE GMAIL APRÈS VALIDATION
+    if (req.method === "POST" && url.pathname === "/api/gmail/send") {
+        try {
+            const data = await readBody(req);
+
+            if (
+                typeof data.emailId !== "string" ||
+                !data.emailId.trim()
+            ) {
+                return sendJSON(res, 400, {
+                    error: "Identifiant de l'e-mail manquant."
+                });
+            }
+
+            if (
+                typeof data.replyText !== "string" ||
+                !data.replyText.trim()
+            ) {
+                return sendJSON(res, 400, {
+                    error: "Le texte de la réponse est vide."
+                });
+            }
+
+            const result = await gmailAgent.sendReply(
+                data.emailId,
+                data.replyText
+            );
+
+            return sendJSON(res, 200, {
+                message: "Réponse envoyée avec succès.",
+                result
+            });
+
+        } catch (error) {
+            console.error("[GMAIL] Erreur d'envoi :", error.message);
+
+            return sendJSON(res, 500, {
+                error: "Impossible d'envoyer la réponse.",
+                details: error.message
+            });
+        }
+    }
+
+    // Vérifier que le plugin Gmail est installé et activé
+const gmailPlugin = plugins.getAll().find(
+    plugin => plugin.id === "gmail"
+);
+
+if (!gmailPlugin?.installed || !gmailPlugin?.enabled) {
+    return sendJSON(res, 403, {
+        error: "Le plugin Gmail doit être installé et activé."
+    });
+}
+
+    // CRÉER UNE MISSION
+    if (req.method === "POST" && url.pathname === "/api/tasks") {
         try {
             const data = await readBody(req);
             const description = data.description || data.task;
@@ -99,8 +315,8 @@ const server = http.createServer(async (req, res) => {
         }
     }
 
-    // Exécuter une mission
-    if (req.method === "POST" && req.url === "/api/tasks/execute") {
+    // EXÉCUTER UNE MISSION
+    if (req.method === "POST" && url.pathname === "/api/tasks/execute") {
         try {
             const data = await readBody(req);
 
@@ -123,8 +339,8 @@ const server = http.createServer(async (req, res) => {
         }
     }
 
-    // Orchestration automatique des agents
-    if (req.method === "POST" && req.url === "/api/orchestrate") {
+    // ORCHESTRATION
+    if (req.method === "POST" && url.pathname === "/api/orchestrate") {
         try {
             const data = await readBody(req);
             const userRequest = data.request || data.description || data.task;
@@ -146,9 +362,6 @@ const server = http.createServer(async (req, res) => {
                 });
             }
 
-            console.log("[ORCHESTRATOR] Analyse de la demande...");
-            console.log("[ORCHESTRATOR] Agents sélectionnés :", selectedAgents);
-
             const plan = await orchestrator.generatePlan(
                 userRequest,
                 selectedAgents
@@ -161,10 +374,6 @@ const server = http.createServer(async (req, res) => {
                 const task = runtime.createTask(
                     step.agentId,
                     step.description
-                );
-
-                console.log(
-                    `[ORCHESTRATOR] Agent ${step.agentId} : mission ${task.id}`
                 );
 
                 await executor.executeTask(task.id, previousTaskId);
@@ -189,8 +398,8 @@ const server = http.createServer(async (req, res) => {
         }
     }
 
-    // Démarrer une mission
-    if (req.method === "POST" && req.url === "/api/tasks/start") {
+    // DÉMARRER UNE MISSION
+    if (req.method === "POST" && url.pathname === "/api/tasks/start") {
         try {
             const data = await readBody(req);
             const task = runtime.startTask(Number(data.taskId));
@@ -207,8 +416,8 @@ const server = http.createServer(async (req, res) => {
         }
     }
 
-    // Terminer une mission
-    if (req.method === "POST" && req.url === "/api/tasks/complete") {
+    // TERMINER UNE MISSION
+    if (req.method === "POST" && url.pathname === "/api/tasks/complete") {
         try {
             const data = await readBody(req);
 
@@ -235,8 +444,8 @@ const server = http.createServer(async (req, res) => {
         }
     }
 
-    // Signaler un échec
-    if (req.method === "POST" && req.url === "/api/tasks/fail") {
+    // ÉCHEC D'UNE MISSION
+    if (req.method === "POST" && url.pathname === "/api/tasks/fail") {
         try {
             const data = await readBody(req);
 
@@ -263,20 +472,10 @@ const server = http.createServer(async (req, res) => {
         }
     }
 
-    // Assistant IA : discussion, analyse et génération d'images
-    if (req.method === "POST" && req.url === "/api/assistant") {
+    // ASSISTANT IA
+    if (req.method === "POST" && url.pathname === "/api/assistant") {
         try {
             const data = await readBody(req);
-
-            console.log(
-                "Nombre d'images reçues :",
-                Array.isArray(data.images) ? data.images.length : 0
-            );
-
-            console.log(
-                "Historique reçu :",
-                Array.isArray(data.history) ? data.history.length : 0
-            );
 
             const result = await assistant.chat(
                 data.message,
@@ -299,13 +498,11 @@ const server = http.createServer(async (req, res) => {
         }
     }
 
-    // Route inconnue
     return sendJSON(res, 404, {
         error: "Route introuvable"
     });
 });
 
-// Démarrage du serveur
 server.listen(PORT, () => {
     console.log("--------------------------------");
     console.log(" AGENTS_IA - BACKEND");
@@ -314,6 +511,9 @@ server.listen(PORT, () => {
     console.log("Runtime : connecté");
     console.log("Orchestrateur : connecté");
     console.log("Assistant IA : connecté");
+    console.log("Gmail Agent : connecté");
     console.log("Génération d'images : disponible");
     console.log("Encodage : UTF-8");
+
+    gmailAgent.startMonitoring(60_000);
 });
