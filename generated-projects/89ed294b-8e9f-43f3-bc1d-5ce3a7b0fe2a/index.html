@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FPS 1v1 Arena - Three.js</title>
+    <link rel="stylesheet" href="style.css">
+    <!-- Import de Three.js via CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+</head>
+<body>
+    <!-- Écran de démarrage / Verrouillage souris -->
+    <div id="blocker">
+        <div id="instructions">
+            <h1>ARENA 1v1 - AK-47</h1>
+            <p>Cliquez ici pour jouer</p>
+            <p><strong>Z, Q, S, D</strong> : Se déplacer<br>
+            <strong>SOURIS</strong> : Regarder / Viser<br>
+            <strong>CLIC GAUCHE</strong> : Tirer<br>
+            <strong>R</strong> : Recharger</p>
+        </div>
+    </div>
+
+    <!-- HUD (Interface de jeu) -->
+    <div id="hud">
+        <div id="crosshair">+</div>
+        
+        <div id="stats-container">
+            <div class="stat-box">
+                <span>JOYEUR PV</span>
+                <div class="bar-container"><div id="player-hp" class="bar"></div></div>
+            </div>
+            <div class="stat-box">
+                <span>BOT PV</span>
+                <div class="bar-container"><div id="bot-hp" class="bar"></div></div>
+            </div>
+        </div>
+
+        <div id="ammo-display">
+            MUNITIONS : <span id="ammo-count">30</span> / <span id="max-ammo">30</span>
+            <div id="reload-msg">RECHARGEMENT...</div>
+        </div>
+
+        <div id="game-over-screen">
+            <h1 id="game-over-title">VICTOIRE</h1>
+            <p>Cliquez pour recommencer</p>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

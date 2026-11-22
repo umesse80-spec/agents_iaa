@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FPS Three.js - Developer Agent</title>
+    <link rel="stylesheet" href="style.css">
+    <!-- Import de Three.js et PointerLockControls via CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/PointerLockControls.js"></script>
+</head>
+<body>
+
+    <!-- Écran de démarrage / Instructions -->
+    <div id="blocker">
+        <div id="instructions">
+            <h1>CYBER FPS ARENA</h1>
+            <p>Cliquez ici pour démarrer la partie</p>
+            <p>
+                [ZQSD / WASD] : Se déplacer<br/>
+                [SOURIS] : Regarder autour<br/>
+                [CLIC GAUCHE] : Tirer<br/>
+                [ÉCHAP] : Quitter le contrôle
+            </p>
+        </div>
+    </div>
+
+    <!-- Interface HUD -->
+    <div id="hud">
+        <div id="crosshair"></div>
+        <div id="score-board">Score : <span id="score">0</span></div>
+        <div id="ammo-board">Munitions : <span id="ammo">30</span> / 30</div>
+    </div>
+
+    <!-- Canvas WebGL -->
+    <script src="script.js"></script>
+</body>
+</html>

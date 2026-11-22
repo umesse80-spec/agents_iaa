@@ -1,0 +1,148 @@
+body, html {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #111;
+    user-select: none;
+}
+
+canvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+}
+
+#blocker {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.8);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 100;
+    cursor: pointer;
+}
+
+#instructions {
+    text-align: center;
+    color: white;
+    background: rgba(20, 20, 20, 0.9);
+    padding: 40px;
+    border-radius: 10px;
+    border: 2px solid #ff4757;
+    box-shadow: 0 0 20px rgba(255, 71, 87, 0.5);
+}
+
+#instructions h1 {
+    color: #ff4757;
+    margin-top: 0;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+}
+
+#instructions p {
+    line-height: 1.6;
+    color: #ddd;
+}
+
+#hud {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 10;
+}
+
+#crosshair {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 24px;
+    font-weight: bold;
+}
+
+#stats-container {
+    position: absolute;
+    bottom: 20px;
+    left: 20px;
+    display: flex;
+    gap: 20px;
+}
+
+.stat-box {
+    background: rgba(0, 0, 0, 0.6);
+    padding: 10px 15px;
+    border-radius: 5px;
+    color: white;
+    font-weight: bold;
+    border-left: 4px solid #ff4757;
+    min-width: 150px;
+}
+
+.bar-container {
+    width: 100%;
+    height: 10px;
+    background: #444;
+    border-radius: 5px;
+    margin-top: 5px;
+    overflow: hidden;
+}
+
+.bar {
+    width: 100%;
+    height: 100%;
+    background: #2ed573;
+    transition: width 0.2s ease;
+}
+
+#ammo-display {
+    position: absolute;
+    bottom: 20px;
+    right: 20px;
+    background: rgba(0, 0, 0, 0.6);
+    padding: 15px 25px;
+    border-radius: 5px;
+    color: white;
+    font-size: 20px;
+    font-weight: bold;
+    border-right: 4px solid #ffa502;
+    text-align: right;
+}
+
+#reload-msg {
+    color: #ffa502;
+    font-size: 14px;
+    margin-top: 5px;
+    display: none;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+#game-over-screen {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.85);
+    display: none;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    color: white;
+    z-index: 200;
+}
+
+#game-over-screen h1 {
+    font-size: 60px;
+    margin-bottom: 10px;
+    letter-spacing: 3px;
+}

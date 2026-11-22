@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FPS 3D Tactical Arena - Developer Agent</title>
+    <link rel="stylesheet" href="style.css">
+    <!-- Three.js CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/PointerLockControls.js"></script>
+</head>
+<body>
+
+    <!-- Écran de démarrage / Instructions -->
+    <div id="blocker">
+        <div id="instructions">
+            <h1>TACTICAL ARENA FPS</h1>
+            <p>Cliquez pour jouer</p>
+            <p>
+                <strong>Z, Q, S, D</strong> : Se déplacer<br>
+                <strong>ESPACE</strong> : Sauter<br>
+                <strong>Clic Gauche</strong> : Tirer<br>
+                <strong>R</strong> : Recharger l'arme<br>
+                <strong>ÉCHAP</strong> : Libérer la souris
+            </p>
+        </div>
+    </div>
+
+    <!-- HUD de Jeu -->
+    <div id="hud">
+        <div id="crosshair">+</div>
+        
+        <div id="health-container">
+            <div>Santé Joueur : <span id="player-hp">100</span> / 100</div>
+            <div class="hp-bar-bg"><div id="player-hp-bar" class="hp-bar"></div></div>
+        </div>
+
+        <div id="enemy-health-container">
+            <div>Bot Ennemi : <span id="enemy-hp">100</span> / 100</div>
+            <div class="hp-bar-bg"><div id="enemy-hp-bar" class="hp-bar"></div></div>
+        </div>
+
+        <div id="ammo-container">
+            MUNITIONS : <span id="ammo-current">30</span> / <span id="ammo-reserve">90</span>
+        </div>
+
+        <div id="score-container">
+            KILLS : <span id="kill-count">0</span>
+        </div>
+
+        <div id="damage-indicator"></div>
+    </div>
+
+    <!-- Écran de Fin de Partie -->
+    <div id="game-over-screen">
+        <h1 id="game-over-title">VICTOIRE</h1>
+        <p id="game-over-text">Vous avez éliminé le bot ennemi !</p>
+        <button id="restart-btn">Rejouer</button>
+    </div>
+
+    <!-- Script Principal du Jeu -->
+    <script src="script.js"></script>
+</body>
+</html>
