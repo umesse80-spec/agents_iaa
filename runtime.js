@@ -142,7 +142,7 @@ function startTask(taskId) {
     return task;
 }
 
-function completeTask(taskId, result) {
+function completeTask(taskId, result, project = null) {
     const task = tasks.get(taskId);
 
     if (!task || task.status !== "running") {
@@ -153,6 +153,7 @@ function completeTask(taskId, result) {
 
     task.status = "completed";
     task.result = result;
+    task.project = project;
     task.completedAt = new Date().toISOString();
 
     agent.status = "idle";

@@ -1,4 +1,4 @@
-
+const projectBuilder = require("./projectBuilder");
 const http = require("http");
 const fs = require("fs");
 const path = require("path");
@@ -404,10 +404,13 @@ if (!gmailPlugin?.installed || !gmailPlugin?.enabled) {
             const data = await readBody(req);
             const task = runtime.startTask(Number(data.taskId));
 
-            return sendJSON(res, 200, {
-                message: "Mission démarrée",
-                task
-            });
+            const completedTask = runtime.getTask(Number(data.taskId));
+
+return sendJSON(res, 200, {
+    message: "Mission exécutée avec succès",
+    result,
+    project: completedTask?.project || null
+});
 
         } catch (error) {
             return sendJSON(res, 400, {
@@ -471,6 +474,45 @@ if (!gmailPlugin?.installed || !gmailPlugin?.enabled) {
             });
         }
     }
+// TÉLÉCHARGEMENT DES PROJETS ZIP
+if (
+    req.method === "GET" &&
+    url.pathname.startsWith("/api/projects/") &&
+    url.pathname.endsWith("/download")
+) {
+    const projectId = url.pathname.split("/")[3];
+    const zipPath = projectBuilder.getProjectZip(projectId);
+
+    if (!zipPath) {
+        return sendJSON(res, 404, {
+            error: "Projet introuvable."
+        });
+    }
+
+    res.writeHead(200, {
+        "Content-Type": "application/zip",
+        "Content-Disposition": 'attachment; filename="projet-agents-ia.zip"',
+        "Content-Length": fs.statSync(zipPath).size,
+        "Access-Control-Allow-Origin": "*"
+    });
+
+    const stream = fs.createReadStream(zipPath);
+
+    stream.on("error", error => {
+        console.error("[PROJECT] Erreur de téléchargement :", error.message);
+
+        if (!res.headersSent) {
+            sendJSON(res, 500, {
+                error: "Erreur pendant le téléchargement."
+            });
+        } else {
+            res.destroy(error);
+        }
+    });
+
+    stream.pipe(res);
+    return;
+}
 
     // ASSISTANT IA
     if (req.method === "POST" && url.pathname === "/api/assistant") {
@@ -484,10 +526,11 @@ if (!gmailPlugin?.installed || !gmailPlugin?.enabled) {
             );
 
             return sendJSON(res, 200, {
-                message: "Réponse de l'Assistant IA",
-                response: result.text,
-                images: result.images || []
-            });
+    message: "Réponse de l'Assistant IA",
+    response: result.text,
+    images: result.images || [],
+    project: result.project || null
+});
 
         } catch (error) {
             console.error("[ASSISTANT] Erreur :", error.message);

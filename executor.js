@@ -1,10 +1,12 @@
 
 require("dotenv").config();
 
+const projectBuilder = require("./projectBuilder");
 const { GoogleGenAI } = require("@google/genai");
 const runtime = require("./runtime");
 const plugins = require("./plugins");
 const gmailAgent = require("./agents/gmailAgent");
+
 const ai = new GoogleGenAI({
     apiKey: process.env.GEMINI_API_KEY
 });
@@ -81,22 +83,25 @@ Utilise ce résultat pour réaliser ta mission.
             throw new Error("Agent introuvable");
         }
 
+        // Contexte Gmail
         let gmailContext = "";
 
-if (agent.role === "email") {
-    const gmailPlugin = plugins.getAll().find(
-        plugin => plugin.id === "gmail"
-    );
+        if (agent.role === "email") {
+            const gmailPlugin = plugins.getAll().find(
+                plugin => plugin.id === "gmail"
+            );
 
-    if (!gmailPlugin?.installed || !gmailPlugin?.enabled) {
-        throw new Error("Le plugin Gmail doit être installé et activé.");
-    }
+            if (!gmailPlugin?.installed || !gmailPlugin?.enabled) {
+                throw new Error(
+                    "Le plugin Gmail doit être installé et activé."
+                );
+            }
 
-    console.log("[EXECUTOR] Connexion au plugin Gmail...");
+            console.log("[EXECUTOR] Connexion au plugin Gmail...");
 
-    const emails = await gmailAgent.getEmails(10);
+            const emails = await gmailAgent.getEmails(10);
 
-    gmailContext = `
+            gmailContext = `
 Voici les 10 derniers e-mails récupérés depuis Gmail :
 
 ${JSON.stringify(emails, null, 2)}
@@ -104,8 +109,9 @@ ${JSON.stringify(emails, null, 2)}
 Tu peux analyser ces e-mails pour réaliser ta mission.
 Tu ne dois jamais prétendre avoir envoyé ou supprimé un e-mail.
 `;
-}
+        }
 
+        // Instructions de l'agent
         const prompt = `
 Tu es un agent IA nommé ${agent.name}.
 Ton rôle est : ${agent.role}.
@@ -117,7 +123,51 @@ ${previousResult}
 
 ${gmailContext}
 
-Réalise cette mission et fournis un résultat clair, précis et structuré.
+SI LA MISSION DEMANDE DE CRÉER OU MODIFIER UN PROJET INFORMATIQUE :
+
+TU DOIS IMPÉRATIVEMENT générer les vrais fichiers du projet.
+
+Ta réponse doit contenir DEUX PARTIES :
+
+PARTIE 1 — PRÉSENTATION
+- Présente le projet.
+- Affiche le code complet de chaque fichier dans des blocs de code séparés.
+- Indique le nom de chaque fichier.
+
+PARTIE 2 — EXPORT AUTOMATIQUE
+À la toute fin de ta réponse, ajoute obligatoirement les deux marqueurs suivants et le JSON complet entre eux.
+
+<<<AGENTS_IA_FILES>>>
+{
+  "files": [
+    {
+      "path": "index.html",
+      "content": "CODE COMPLET EXACT DU FICHIER"
+    },
+    {
+      "path": "style.css",
+      "content": "CODE COMPLET EXACT DU FICHIER"
+    },
+    {
+      "path": "script.js",
+      "content": "CODE COMPLET EXACT DU FICHIER"
+    }
+  ]
+}
+<<<END_AGENTS_IA_FILES>>>
+
+RÈGLES ABSOLUES :
+- Les marqueurs sont obligatoires pour tout projet informatique.
+- Le JSON doit être valide et analysable par JSON.parse.
+- Échappe correctement les guillemets et les retours à la ligne dans les chaînes JSON.
+- Le contenu des fichiers dans le JSON doit être exactement le même que dans les blocs de code affichés.
+- N'écris aucun texte après le marqueur de fin.
+- N'utilise jamais de contenu fictif comme "CONTENU COMPLET".
+- N'omets aucun fichier nécessaire au fonctionnement du projet.
+- Ne tronque jamais le code.
+- Les chemins doivent correspondre aux vrais noms des fichiers.
+- Inclus tous les fichiers nécessaires, même si le projet contient plus de trois fichiers.
+- Ne fournis pas les marqueurs pour une mission qui ne demande pas de créer ou modifier des fichiers.
 `;
 
         console.log("[EXECUTOR] Appel de Gemini...");
@@ -130,11 +180,38 @@ Réalise cette mission et fournis un résultat clair, précis et structuré.
             throw new Error("Gemini n'a fourni aucun résultat");
         }
 
-        runtime.completeTask(taskId, result);
+        // Création automatique du projet ZIP
+        let project = null;
+        let displayResult = result;
+
+        try {
+            const generatedProject =
+                await projectBuilder.createProjectZip(result);
+
+            if (generatedProject) {
+                project = {
+                    projectId: generatedProject.projectId,
+                    zipUrl: generatedProject.zipUrl,
+                    files: generatedProject.files.map(file => file.path)
+                };
+
+                displayResult = generatedProject.text;
+
+                console.log("[PROJECT] ZIP créé avec succès");
+            }
+        } catch (error) {
+            console.error(
+                "[PROJECT] Erreur de création du ZIP :",
+                error.message
+            );
+        }
+
+        // Enregistrement du résultat et du projet
+        runtime.completeTask(taskId, displayResult, project);
 
         console.log(`[EXECUTOR] Mission ${taskId} terminée`);
 
-        return result;
+        return displayResult;
 
     } catch (error) {
         console.error("[EXECUTOR] Erreur :", error.message);

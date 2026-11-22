@@ -160,7 +160,7 @@
           required></textarea>
 
         <div id="orchestrator-chat" class="orchestrator-chat"></div>
-
+<div id="orchestrator-results" class="orchestrator-results"></div>
         <div class="field-label">Choisir les agents participants</div>
 
         <div style="display:flex;flex-direction:column;gap:10px;margin:12px 0;">
@@ -1199,12 +1199,35 @@ async function loadTasks() {
 
     card.append(top, description, meta);
 
-    if (t.result) {
-      const result = document.createElement("div");
-      result.className = "task-result";
-      result.appendChild(createMarkdownElement(t.result));
-      card.appendChild(result);
-    }
+   if (t.result) {
+  const result = document.createElement("div");
+  result.className = "task-result";
+  result.appendChild(createMarkdownElement(t.result));
+  card.appendChild(result);
+}
+
+// BOUTON DE TÉLÉCHARGEMENT DU PROJET ZIP
+if (
+  t.project &&
+  typeof t.project.zipUrl === "string" &&
+  /^\/api\/projects\/[a-f0-9-]{36}\/download$/i.test(t.project.zipUrl)
+) {
+  const downloadLink = document.createElement("a");
+  downloadLink.href = `${API}${t.project.zipUrl}`;
+  downloadLink.textContent = "📦 Télécharger le projet (.zip)";
+  downloadLink.className = "assistant-download-link";
+  downloadLink.download = "projet-agents-ia.zip";
+  downloadLink.style.display = "inline-block";
+  downloadLink.style.marginTop = "12px";
+  downloadLink.style.padding = "12px 18px";
+  downloadLink.style.borderRadius = "10px";
+  downloadLink.style.background = "#2563eb";
+  downloadLink.style.color = "#ffffff";
+  downloadLink.style.textDecoration = "none";
+  downloadLink.style.fontWeight = "600";
+
+  card.appendChild(downloadLink);
+}
 
     if (t.error) {
       const error = document.createElement("div");
@@ -1251,6 +1274,7 @@ async function refresh() {
   }
 }
 
+
 // ORCHESTRATEUR
 document.getElementById("orchestrator-button").addEventListener("click", async () => {
   const input = document.getElementById("orchestrator-request");
@@ -1275,12 +1299,51 @@ document.getElementById("orchestrator-button").addEventListener("click", async (
     });
 
     const data = await res.json();
-    if (!res.ok) throw new Error(data.error || data.message || "Erreur de l'orchestrateur");
+console.log("RÉPONSE DE L'ORCHESTRATEUR :", data);
+    if (!res.ok) {
+      throw new Error(data.error || data.message || "Erreur de l'orchestrateur");
+    }
 
     toast("Workflow automatique terminé !", "success");
+
     input.value = "";
     document.querySelectorAll(".orchestrator-agent").forEach(c => c.checked = false);
+
     await refresh();
+
+   // ENVOYER LES PROJETS ZIP DIRECTEMENT DANS LA CONVERSATION
+const projects = Array.isArray(data.tasks)
+  ? data.tasks.filter(task => task.project && task.project.zipUrl)
+  : [];
+
+const conversation = getActiveConversation();
+
+if (!conversation) {
+  throw new Error("Conversation introuvable");
+}
+
+if (projects.length > 0) {
+  projects.forEach(task => {
+    conversation.messages.push({
+      role: "assistant",
+      content: `Le projet de la mission ${task.id} est prêt !`,
+      project: {
+        zipUrl: task.project.zipUrl,
+        files: Array.isArray(task.project.files)
+          ? task.project.files
+          : []
+      }
+    });
+  });
+} else {
+  conversation.messages.push({
+    role: "assistant",
+    content: "Le workflow est terminé, mais aucun fichier ZIP n'a été reçu."
+  });
+}
+
+saveConversations();
+renderConversation();
   } catch (error) {
     toast(error.message, "error");
     console.error("Erreur orchestrateur :", error);
@@ -1529,6 +1592,7 @@ function appendConversationImages(element, images, altText) {
   });
 }
 
+
 // AFFICHAGE DES MESSAGES
 function renderConversation() {
   assistantMessages.innerHTML = "";
@@ -1589,6 +1653,44 @@ function renderConversation() {
 
       element.appendChild(createMarkdownElement(message.content || ""));
 
+      // BOUTON DE TÉLÉCHARGEMENT DU PROJET ZIP
+      if (
+        message.project &&
+        typeof message.project.zipUrl === "string" &&
+        /^\/api\/projects\/[a-f0-9-]{36}\/download$/i.test(message.project.zipUrl)
+      ) {
+        const downloadContainer = document.createElement("div");
+        downloadContainer.style.marginTop = "16px";
+
+        const downloadLink = document.createElement("a");
+        downloadLink.href = `${API}${message.project.zipUrl}`;
+        downloadLink.textContent = "📦 Télécharger le projet (.zip)";
+        downloadLink.className = "assistant-download-link";
+        downloadLink.download = "projet-agents-ia.zip";
+        downloadLink.style.display = "inline-block";
+        downloadLink.style.padding = "12px 18px";
+        downloadLink.style.borderRadius = "10px";
+        downloadLink.style.background = "#2563eb";
+        downloadLink.style.color = "#ffffff";
+        downloadLink.style.textDecoration = "none";
+        downloadLink.style.fontWeight = "600";
+
+        downloadContainer.appendChild(downloadLink);
+
+        if (Array.isArray(message.project.files)) {
+          const fileInfo = document.createElement("p");
+          fileInfo.textContent =
+            `${message.project.files.length} fichier(s) dans le projet`;
+          fileInfo.style.fontSize = "12px";
+          fileInfo.style.opacity = "0.7";
+          fileInfo.style.marginTop = "8px";
+
+          downloadContainer.appendChild(fileInfo);
+        }
+
+        element.appendChild(downloadContainer);
+      }
+
       const generatedImages = Array.isArray(message.images)
         ? message.images
         : [];
@@ -1605,6 +1707,7 @@ function renderConversation() {
 
   assistantMessages.scrollTop = assistantMessages.scrollHeight;
 }
+
 
 // LECTURE DES IMAGES
 function readImageAsDataURL(file) {
@@ -1724,6 +1827,7 @@ function clearSelectedImages() {
   assistantPreview.innerHTML = "";
 }
 
+
 // ENVOI DU MESSAGE ET DES IMAGES
 async function sendAssistantMessage() {
   const message = assistantInput.value.trim();
@@ -1826,7 +1930,8 @@ async function sendAssistantMessage() {
           ? "Voici l'image que j'ai créée."
           : "Je n'ai pas reçu de réponse."
       ),
-      images: generatedImages
+      images: generatedImages,
+      project: data.project || null
     });
 
     saveConversations();
@@ -1849,22 +1954,6 @@ async function sendAssistantMessage() {
     assistantInput.focus();
   }
 }
-
-// BOUTONS ET CLAVIER
-newChatButton.addEventListener("click", () => {
-  if (assistantBusy) return;
-  clearSelectedImages();
-  createConversation();
-});
-
-assistantSend.addEventListener("click", sendAssistantMessage);
-
-assistantInput.addEventListener("keydown", event => {
-  if (event.key === "Enter" && !event.shiftKey) {
-    event.preventDefault();
-    sendAssistantMessage();
-  }
-});
 
 // INITIALISATION
 renderHistory();

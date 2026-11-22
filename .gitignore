@@ -1,10 +1,16 @@
 node_modules/
 .env
-
-# Identifiants Google
+# Identifiants et jetons privés
 gmail-credentials.json
+gmail-credentials.json.json
 token.json
-token-backup.json
 
-# DonnÃ©es personnelles
-data/gmail-analyses.json
+# Dépendances
+node_modules/
+
+# Variables d'environnement
+.env
+.env.*
+
+# Fichiers système
+Thumbs.db
